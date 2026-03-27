@@ -976,6 +976,12 @@ select {
   font-size: 0.88rem;
 }
 
+.account-hint {
+  margin: -2px 0 6px;
+  font-size: 0.82rem;
+  color: var(--playnix-text-muted);
+}
+
 .module-page__shell {
   padding: 34px;
   border-radius: 30px;
