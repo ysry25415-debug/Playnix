@@ -5,9 +5,9 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { type User } from "@supabase/supabase-js";
 
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { supabase } from "@/lib/supabase-client";
 
-type UserRole = "customer" | "seller" | "admin";
 type RequestStatus = "pending" | "approved" | "rejected" | "none";
 
 type StoredRequest = {
@@ -32,7 +32,7 @@ function getFileExt(file: File): string {
 
 export default function SellerApplyPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<UserRole>("customer");
+  const [role, setRole] = useState<AppRole | null>(null);
   const [requestStatus, setRequestStatus] = useState<RequestStatus>("none");
   const [lastRequest, setLastRequest] = useState<StoredRequest>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
@@ -55,35 +55,15 @@ export default function SellerApplyPage() {
     let isMounted = true;
 
     async function loadRole() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-
-      if (!accessToken) {
-        if (isMounted) setRole("customer");
-        return;
-      }
-
-      const response = await fetch("/api/me/role", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const profileRole = await fetchRoleForCurrentUser(supabase);
 
       if (!isMounted) return;
 
-      if (!response.ok) {
-        setRole("customer");
+      if (!profileRole) {
         return;
       }
 
-      const payload = await response.json().catch(() => null);
-      const profileRole = payload?.role;
-      if (profileRole === "seller" || profileRole === "admin" || profileRole === "customer") {
-        setRole(profileRole);
-      } else {
-        setRole("customer");
-      }
+      setRole(profileRole);
     }
 
     async function loadState() {
@@ -244,6 +224,7 @@ export default function SellerApplyPage() {
   }
 
   const requestStatusText = useMemo(() => {
+    if (!role) return "Loading your account status...";
     if (role === "seller") return "You are already a verified seller.";
     if (requestStatus === "pending") return "Your seller request is pending review.";
     if (requestStatus === "approved") return "Your seller request was approved.";
@@ -322,6 +303,7 @@ export default function SellerApplyPage() {
                   type="submit"
                   disabled={
                     isLoading ||
+                    !role ||
                     isSubmitting ||
                     requestStatus === "pending"
                   }

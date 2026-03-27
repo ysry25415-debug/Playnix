@@ -6,16 +6,15 @@ import { type User } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 
 import { siteNavigation } from "@/lib/homepage-data";
+import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 
-type UserRole = "customer" | "seller" | "admin";
-
 export function SiteHeader() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [userRole, setUserRole] = useState<UserRole>("customer");
+  const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const displayName = useMemo(() => {
@@ -45,35 +44,15 @@ export function SiteHeader() {
     let isMounted = true;
 
     async function loadRole() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-
-      if (!accessToken) {
-        if (isMounted) setUserRole("customer");
-        return;
-      }
-
-      const response = await fetch("/api/me/role", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const role = await fetchRoleForCurrentUser(supabase);
 
       if (!isMounted) return;
 
-      if (!response.ok) {
-        setUserRole("customer");
+      if (!role) {
         return;
       }
 
-      const payload = await response.json().catch(() => null);
-      const role = payload?.role;
-      if (role === "admin" || role === "seller" || role === "customer") {
-        setUserRole(role);
-      } else {
-        setUserRole("customer");
-      }
+      setUserRole(role);
     }
 
     async function loadUser() {
@@ -84,7 +63,7 @@ export function SiteHeader() {
         if (currentUser) {
           await loadRole();
         } else {
-          setUserRole("customer");
+          setUserRole(null);
         }
       }
     }
@@ -99,7 +78,7 @@ export function SiteHeader() {
         if (sessionUser) {
           await loadRole();
         } else {
-          setUserRole("customer");
+          setUserRole(null);
         }
       }
     });
@@ -112,25 +91,31 @@ export function SiteHeader() {
 
   async function handleLogout() {
     setIsLoggingOut(true);
-    await supabase.auth.signOut({ scope: "global" });
-    if (typeof window !== "undefined") {
-      Object.keys(window.localStorage).forEach((key) => {
-        if (key.startsWith("sb-")) {
-          window.localStorage.removeItem(key);
-        }
-      });
-    }
-    setUser(null);
-    setUserRole("customer");
-    router.replace("/auth/login");
-    router.refresh();
-    if (typeof window !== "undefined") {
-      window.location.assign("/auth/login");
+    try {
+      await Promise.race([
+        supabase.auth.signOut({ scope: "global" }),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
+    } finally {
+      if (typeof window !== "undefined") {
+        Object.keys(window.localStorage).forEach((key) => {
+          if (key.startsWith("sb-")) {
+            window.localStorage.removeItem(key);
+          }
+        });
+      }
+      setUser(null);
+      setUserRole(null);
+      router.replace("/auth/login");
+      router.refresh();
+      if (typeof window !== "undefined") {
+        window.location.assign("/auth/login");
+      }
     }
   }
 
   const roleLabel =
-    userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : "Customer";
+    userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : userRole === "customer" ? "Customer" : "Loading role...";
 
   return (
     <header className="site-header">

@@ -6,10 +6,10 @@ import { type User } from "@supabase/supabase-js";
 
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
+import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { supabase } from "@/lib/supabase-client";
 
 const MAX_AVATAR_UPLOAD_MB = 5;
-type UserRole = "customer" | "seller" | "admin";
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -77,8 +77,9 @@ export default function AccountPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessingAvatar, setIsProcessingAvatar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [role, setRole] = useState<UserRole>("customer");
-  const roleLabel = role === "admin" ? "Admin" : role === "seller" ? "Seller" : "Customer";
+  const [role, setRole] = useState<AppRole | null>(null);
+  const roleLabel =
+    role === "admin" ? "Admin" : role === "seller" ? "Seller" : role === "customer" ? "Customer" : "Loading...";
 
   const avatarFallback = useMemo(() => {
     if (!displayName.trim()) return "P";
@@ -89,35 +90,15 @@ export default function AccountPage() {
     let isMounted = true;
 
     async function loadRole() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-
-      if (!accessToken) {
-        if (isMounted) setRole("customer");
-        return;
-      }
-
-      const response = await fetch("/api/me/role", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const currentRole = await fetchRoleForCurrentUser(supabase);
 
       if (!isMounted) return;
 
-      if (!response.ok) {
-        setRole("customer");
+      if (!currentRole) {
         return;
       }
 
-      const payload = await response.json().catch(() => null);
-      const currentRole = payload?.role;
-      if (currentRole === "admin" || currentRole === "seller" || currentRole === "customer") {
-        setRole(currentRole);
-      } else {
-        setRole("customer");
-      }
+      setRole(currentRole);
     }
 
     async function loadUser() {

@@ -3,9 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { supabase } from "@/lib/supabase-client";
-
-type AppRole = "customer" | "seller" | "admin";
 
 type AuthGuardProps = {
   children: ReactNode;
@@ -25,50 +24,28 @@ export function AuthGuard({
   useEffect(() => {
     let isMounted = true;
 
-    async function fetchOwnRole(): Promise<AppRole | null> {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-
-      if (!accessToken) {
-        return null;
-      }
-
-      const response = await fetch("/api/me/role", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        return null;
-      }
-
-      const payload = await response.json().catch(() => null);
-      if (!payload || typeof payload.role !== "string") {
-        return null;
-      }
-
-      return payload.role === "admin" || payload.role === "seller" || payload.role === "customer"
-        ? payload.role
-        : null;
-    }
-
-    async function hasRequiredRole(_userId: string) {
+    async function hasRequiredRole() {
       if (!requiredRole) {
         return true;
       }
-      const role = await fetchOwnRole();
+
+      let role = await fetchRoleForCurrentUser(supabase);
+      if (!role) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        role = await fetchRoleForCurrentUser(supabase);
+      }
+
       return role === requiredRole;
     }
 
     async function checkAuth() {
-      const { data } = await supabase.auth.getUser();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
 
       if (!isMounted) return;
 
-      if (data.user) {
-        const allowedByRole = await hasRequiredRole(data.user.id);
+      if (session?.user) {
+        const allowedByRole = await hasRequiredRole();
 
         if (!isMounted) return;
 
@@ -95,7 +72,7 @@ export function AuthGuard({
       if (!isMounted) return;
 
       if (session?.user) {
-        const allowedByRole = await hasRequiredRole(session.user.id);
+        const allowedByRole = await hasRequiredRole();
 
         if (!isMounted) return;
 
