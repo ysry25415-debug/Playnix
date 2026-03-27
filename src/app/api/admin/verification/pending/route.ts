@@ -6,10 +6,12 @@ type RawRequestRow = {
   user_id: string;
   selfie_path: string;
   passport_path: string;
-  status: "pending";
+  status: "pending" | "approved" | "rejected";
   submitted_at: string;
   admin_note: string | null;
 };
+
+type RequestStatus = "pending" | "approved" | "rejected";
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -63,18 +65,21 @@ export async function GET(request: NextRequest) {
   if ("error" in auth) return auth.error;
 
   const { adminClient } = auth;
+  const requestedStatus = request.nextUrl.searchParams.get("status");
+  const status: RequestStatus =
+    requestedStatus === "approved" || requestedStatus === "rejected" ? requestedStatus : "pending";
 
   const { data, error } = await adminClient
     .from("seller_verification_requests")
     .select("id,user_id,selfie_path,passport_path,status,submitted_at,admin_note")
-    .eq("status", "pending")
-    .order("submitted_at", { ascending: true });
+    .eq("status", status)
+    .order("submitted_at", { ascending: status !== "pending" });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const requests = ((data ?? []) as RawRequestRow[]).filter((item) => item.status === "pending");
+  const requests = ((data ?? []) as RawRequestRow[]).filter((item) => item.status === status);
   const userIds = requests.map((item) => item.user_id);
 
   let profileMap: Record<string, { full_name: string | null; avatar_url: string | null }> = {};
@@ -101,13 +106,10 @@ export async function GET(request: NextRequest) {
 
   const withSignedUrls = await Promise.all(
     requests.map(async (item) => {
-      const selfieResult = await adminClient.storage
-        .from("kyc-docs")
-        .createSignedUrl(item.selfie_path, 60 * 15);
-
-      const passportResult = await adminClient.storage
-        .from("kyc-docs")
-        .createSignedUrl(item.passport_path, 60 * 15);
+      const [selfieResult, passportResult] = await Promise.all([
+        adminClient.storage.from("kyc-docs").createSignedUrl(item.selfie_path, 60 * 15),
+        adminClient.storage.from("kyc-docs").createSignedUrl(item.passport_path, 60 * 15),
+      ]);
 
       return {
         ...item,

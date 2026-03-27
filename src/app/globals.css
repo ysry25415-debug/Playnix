@@ -1066,6 +1066,41 @@ select {
   margin-top: 10px;
 }
 
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.admin-tab {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.25);
+  background: rgba(10, 15, 10, 0.75);
+  color: var(--playnix-text-secondary);
+  cursor: pointer;
+}
+
+.admin-tab--active {
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.62);
+  background: rgba(20, 52, 20, 0.76);
+  color: var(--playnix-text-primary);
+}
+
+.admin-refresh-button {
+  min-height: 44px;
+  margin-left: auto;
+}
+
+.admin-list-title {
+  margin: 0 0 6px;
+  color: var(--playnix-text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
 .admin-review-item {
   border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.22);
   background: rgba(8, 14, 8, 0.66);
@@ -1092,6 +1127,25 @@ select {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.admin-approve-button,
+.admin-reject-button {
+  min-width: 190px;
+  font-size: 0.95rem;
+}
+
+.admin-reject-button {
+  border-color: rgba(255, 95, 95, 0.45);
+  color: #ffd6d6;
+  background: rgba(45, 14, 14, 0.72);
+}
+
+.admin-reject-button:hover,
+.admin-reject-button:focus-visible {
+  border-color: rgba(255, 118, 118, 0.7);
+  background: rgba(62, 14, 14, 0.9);
+  box-shadow: 0 0 20px rgba(255, 95, 95, 0.2);
 }
 
 .module-page__shell {
@@ -1200,6 +1254,10 @@ select {
 
   .kyc-preview-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-refresh-button {
+    margin-left: 0;
   }
 }
 
