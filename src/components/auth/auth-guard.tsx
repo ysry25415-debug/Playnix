@@ -5,11 +5,19 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { supabase } from "@/lib/supabase-client";
 
+type AppRole = "customer" | "seller" | "admin";
+
 type AuthGuardProps = {
   children: ReactNode;
+  requiredRole?: AppRole;
+  unauthorizedRedirectTo?: string;
 };
 
-export function AuthGuard({ children }: AuthGuardProps) {
+export function AuthGuard({
+  children,
+  requiredRole,
+  unauthorizedRedirectTo = "/",
+}: AuthGuardProps) {
   const router = useRouter();
   const [isAllowed, setIsAllowed] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
@@ -17,12 +25,32 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     let isMounted = true;
 
+    async function hasRequiredRole(userId: string) {
+      if (!requiredRole) {
+        return true;
+      }
+
+      const { data } = await supabase.from("profiles").select("role").eq("id", userId).maybeSingle();
+      return data?.role === requiredRole;
+    }
+
     async function checkAuth() {
       const { data } = await supabase.auth.getUser();
 
       if (!isMounted) return;
 
       if (data.user) {
+        const allowedByRole = await hasRequiredRole(data.user.id);
+
+        if (!isMounted) return;
+
+        if (!allowedByRole) {
+          setIsAllowed(false);
+          setIsChecking(false);
+          router.replace(unauthorizedRedirectTo);
+          return;
+        }
+
         setIsAllowed(true);
         setIsChecking(false);
         return;
@@ -35,10 +63,21 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
     checkAuth();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!isMounted) return;
 
       if (session?.user) {
+        const allowedByRole = await hasRequiredRole(session.user.id);
+
+        if (!isMounted) return;
+
+        if (!allowedByRole) {
+          setIsAllowed(false);
+          setIsChecking(false);
+          router.replace(unauthorizedRedirectTo);
+          return;
+        }
+
         setIsAllowed(true);
         setIsChecking(false);
         return;
@@ -52,7 +91,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       isMounted = false;
       authListener.subscription.unsubscribe();
     };
-  }, [router]);
+  }, [requiredRole, router, unauthorizedRedirectTo]);
 
   if (isChecking || !isAllowed) {
     return (

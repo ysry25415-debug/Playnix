@@ -117,7 +117,7 @@ export default function AdminVerificationPage() {
         : "Rejected Requests";
 
   return (
-    <AuthGuard>
+    <AuthGuard requiredRole="admin" unauthorizedRedirectTo="/">
       <main className="auth-page">
         <div className="shell">
           <section className="auth-card admin-review-card">
