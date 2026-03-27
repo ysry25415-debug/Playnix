@@ -77,6 +77,7 @@ export default function AccountPage() {
   const [isProcessingAvatar, setIsProcessingAvatar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [role, setRole] = useState<UserRole>("customer");
+  const roleLabel = role === "admin" ? "Admin" : role === "seller" ? "Seller" : "Customer";
 
   const avatarFallback = useMemo(() => {
     if (!displayName.trim()) return "P";
@@ -247,7 +248,7 @@ export default function AccountPage() {
                   <strong>{displayName || "Player"}</strong>
                   <span>{user?.email}</span>
                 </div>
-                <span className="account-role-badge">{role}</span>
+                <span className="account-role-badge">{roleLabel}</span>
               </div>
 
               <form className="auth-form" onSubmit={handleSave}>

@@ -86,8 +86,13 @@ export async function POST(request: NextRequest) {
   if (decision === "approved") {
     const { error: roleError } = await adminClient
       .from("profiles")
-      .update({ role: "seller" })
-      .eq("id", verificationRow.user_id);
+      .upsert(
+        {
+          id: verificationRow.user_id,
+          role: "seller",
+        },
+        { onConflict: "id" }
+      );
 
     if (roleError) {
       return NextResponse.json({ error: roleError.message }, { status: 400 });
