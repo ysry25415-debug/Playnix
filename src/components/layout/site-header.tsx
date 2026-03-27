@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { siteNavigation } from "@/lib/homepage-data";
 import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
+import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 
 type UserRole = "customer" | "seller" | "admin";
 
@@ -159,7 +160,10 @@ export function SiteHeader() {
                 {avatarUrl ? <img src={avatarUrl} alt="" /> : avatarFallback}
               </span>
               <span className="user-chip__copy">
-                <strong>{displayName}</strong>
+                <span className="user-chip__name-row">
+                  <strong>{displayName}</strong>
+                  {userRole === "seller" ? <SellerVerifiedBadge /> : null}
+                </span>
                 <span>{roleLabel}</span>
               </span>
             </Link>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { type User } from "@supabase/supabase-js";
 
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 import { supabase } from "@/lib/supabase-client";
 
 const MAX_AVATAR_UPLOAD_MB = 5;
@@ -245,7 +246,10 @@ export default function AccountPage() {
                   {avatarUrl.trim() ? <img src={avatarUrl.trim()} alt="" /> : avatarFallback}
                 </span>
                 <div className="account-preview__copy">
-                  <strong>{displayName || "Player"}</strong>
+                  <span className="account-name-row">
+                    <strong>{displayName || "Player"}</strong>
+                    {role === "seller" ? <SellerVerifiedBadge /> : null}
+                  </span>
                   <span>{user?.email}</span>
                 </div>
                 <span className="account-role-badge">{roleLabel}</span>

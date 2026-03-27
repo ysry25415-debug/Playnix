@@ -235,12 +235,36 @@ select {
   line-height: 1.1;
 }
 
+.user-chip__name-row,
+.account-name-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .user-chip__copy strong {
   font-size: 0.88rem;
   max-width: 120px;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+
+.seller-verified-badge {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.45);
+  box-shadow: 0 0 8px rgba(var(--playnix-accent-rgb), 0.2);
+  flex-shrink: 0;
+}
+
+.seller-verified-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .user-chip__copy span {
