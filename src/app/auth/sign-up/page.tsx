@@ -47,7 +47,7 @@ export default function SignUpPage() {
         ? `${window.location.origin}/auth/login?verified=1`
         : undefined;
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email: trimmedEmail,
       password,
       options: {
@@ -66,6 +66,18 @@ export default function SignUpPage() {
       }
 
       setError(signUpError.message);
+      return;
+    }
+
+    // Supabase can return a masked "success" with no identities when the email
+    // is already registered (anti-enumeration behavior), and no new email is sent.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      setError("This email is already registered. Please log in or reset your password.");
+      return;
+    }
+
+    if (!data.user) {
+      setError("Could not create account right now. Please try again.");
       return;
     }
 
