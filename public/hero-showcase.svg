@@ -1,0 +1,54 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" fill="#05070B"/>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="820" cy="332" r="154" fill="url(#sunGlow)"/>
+  <path d="M0 533L142 404L260 458L376 328L478 418L584 270L710 371L826 208L953 365L1086 256L1198 375L1318 302L1454 412L1600 348V900H0V533Z" fill="url(#mountains)"/>
+  <path d="M0 643L175 575L286 634L420 548L542 646L680 516L842 620L1002 530L1148 640L1292 573L1448 678L1600 604V900H0V643Z" fill="#16202C"/>
+  <path d="M590 900L738 528H866L1010 900H590Z" fill="url(#valley)"/>
+  <path d="M784 312H818V468H784V312Z" fill="#6D111C"/>
+  <path d="M720 374L802 286L884 374L850 406L820 376V500H782V376L752 406L720 374Z" fill="#FFFBFB"/>
+  <rect x="790" y="480" width="22" height="94" rx="6" fill="#FF2A2A"/>
+  <path d="M182 642L268 575L332 640L332 788H182V642Z" fill="#2E7D5B"/>
+  <rect x="220" y="602" width="62" height="70" fill="#4BAA79"/>
+  <rect x="104" y="694" width="86" height="152" fill="#C67138"/>
+  <rect x="146" y="650" width="86" height="86" fill="#F5D1BF"/>
+  <path d="M1240 586L1318 518L1382 590L1382 840H1240V586Z" fill="#667D96"/>
+  <rect x="1268" y="542" width="70" height="76" fill="#8EA7C0"/>
+  <rect x="1214" y="650" width="88" height="176" fill="#6A829A"/>
+  <rect x="1302" y="650" width="88" height="176" fill="#8FA8C1"/>
+  <path d="M781 470L859 422L914 470L914 692H781V470Z" fill="#315B46"/>
+  <rect x="804" y="402" width="85" height="88" fill="#4A8468"/>
+  <rect x="96" y="814" width="1408" height="86" fill="url(#groundGlow)"/>
+  <rect x="0" y="0" width="1600" height="900" fill="url(#vignette)"/>
+  <defs>
+    <linearGradient id="sky" x1="800" y1="0" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A0F18"/>
+      <stop offset="0.22" stop-color="#2B1C3B"/>
+      <stop offset="0.45" stop-color="#8F1826"/>
+      <stop offset="0.68" stop-color="#FF6B2C"/>
+      <stop offset="1" stop-color="#0B0F15"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(820 332) rotate(90) scale(190)">
+      <stop stop-color="#FFE88A"/>
+      <stop offset="0.52" stop-color="#FF9D4D" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#FF2A2A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mountains" x1="800" y1="208" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4B1E25"/>
+      <stop offset="0.58" stop-color="#1E1826"/>
+      <stop offset="1" stop-color="#0A0E15"/>
+    </linearGradient>
+    <linearGradient id="valley" x1="800" y1="528" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1B3128"/>
+      <stop offset="1" stop-color="#07100B"/>
+    </linearGradient>
+    <linearGradient id="groundGlow" x1="800" y1="814" x2="800" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111821" stop-opacity="0"/>
+      <stop offset="1" stop-color="#05070B"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(800 450) rotate(90) scale(520 920)">
+      <stop offset="0.58" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.62"/>
+    </radialGradient>
+  </defs>
+</svg>
