@@ -8,6 +8,7 @@ import { AuthGuard } from "@/components/auth/auth-guard";
 import { supabase } from "@/lib/supabase-client";
 
 const MAX_AVATAR_UPLOAD_MB = 5;
+type UserRole = "customer" | "seller" | "admin";
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -75,6 +76,7 @@ export default function AccountPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessingAvatar, setIsProcessingAvatar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [role, setRole] = useState<UserRole>("customer");
 
   const avatarFallback = useMemo(() => {
     if (!displayName.trim()) return "P";
@@ -105,6 +107,20 @@ export default function AccountPage() {
           : (currentUser.email?.split("@")[0] ?? "Player")
       );
       setAvatarUrl(typeof metadataAvatar === "string" ? metadataAvatar : "");
+
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", currentUser.id)
+        .maybeSingle();
+
+      const currentRole = profileData?.role;
+      if (currentRole === "admin" || currentRole === "seller" || currentRole === "customer") {
+        setRole(currentRole);
+      } else {
+        setRole("customer");
+      }
+
       setIsLoading(false);
     }
 
@@ -211,6 +227,7 @@ export default function AccountPage() {
                   <strong>{displayName || "Player"}</strong>
                   <span>{user?.email}</span>
                 </div>
+                <span className="account-role-badge">{role}</span>
               </div>
 
               <form className="auth-form" onSubmit={handleSave}>
@@ -257,6 +274,18 @@ export default function AccountPage() {
               </form>
 
               <p className="auth-switch">
+                {role === "customer" ? (
+                  <>
+                    Want to sell? <Link href="/seller/apply">Join sellers</Link>.
+                    <br />
+                  </>
+                ) : null}
+                {role === "admin" ? (
+                  <>
+                    Open <Link href="/admin/verification">Admin review</Link>.
+                    <br />
+                  </>
+                ) : null}
                 Back to <Link href="/">Home</Link>
               </p>
             </section>

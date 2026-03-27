@@ -9,9 +9,12 @@ import { siteNavigation } from "@/lib/homepage-data";
 import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
 
+type UserRole = "customer" | "seller" | "admin";
+
 export function SiteHeader() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>("customer");
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -39,18 +42,48 @@ export function SiteHeader() {
   useEffect(() => {
     let isMounted = true;
 
+    async function loadRole(userId: string) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (!isMounted) return;
+
+      const role = data?.role;
+      if (role === "admin" || role === "seller" || role === "customer") {
+        setUserRole(role);
+      } else {
+        setUserRole("customer");
+      }
+    }
+
     async function loadUser() {
       const { data } = await supabase.auth.getUser();
       if (isMounted) {
-        setUser(data.user ?? null);
+        const currentUser = data.user ?? null;
+        setUser(currentUser);
+        if (currentUser) {
+          await loadRole(currentUser.id);
+        } else {
+          setUserRole("customer");
+        }
       }
     }
 
     loadUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (isMounted) {
-        setUser(session?.user ?? null);
+        const sessionUser = session?.user ?? null;
+        setUser(sessionUser);
+
+        if (sessionUser) {
+          await loadRole(sessionUser.id);
+        } else {
+          setUserRole("customer");
+        }
       }
     });
 
@@ -62,8 +95,12 @@ export function SiteHeader() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
+    setUserRole("customer");
     router.push("/");
   }
+
+  const roleLabel =
+    userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : "Customer";
 
   return (
     <header className="site-header">
@@ -94,9 +131,24 @@ export function SiteHeader() {
               </span>
               <span className="user-chip__copy">
                 <strong>{displayName}</strong>
-                <span>Manage account</span>
+                <span>{roleLabel}</span>
               </span>
             </Link>
+            {userRole === "customer" ? (
+              <Link className="ghost-button" href="/seller/apply">
+                Join Sellers
+              </Link>
+            ) : null}
+            {userRole === "seller" ? (
+              <Link className="ghost-button" href="/sell">
+                Seller Center
+              </Link>
+            ) : null}
+            {userRole === "admin" ? (
+              <Link className="ghost-button" href="/admin/verification">
+                Admin Review
+              </Link>
+            ) : null}
             <button className="ghost-button" type="button" onClick={handleLogout}>
               Log Out
             </button>
