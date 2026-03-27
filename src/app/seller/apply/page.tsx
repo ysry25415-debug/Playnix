@@ -5,7 +5,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { type User } from "@supabase/supabase-js";
 
 import { AuthGuard } from "@/components/auth/auth-guard";
-import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
+import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
 import { supabase } from "@/lib/supabase-client";
 
 type RequestStatus = "pending" | "approved" | "rejected" | "none";
@@ -67,8 +67,8 @@ export default function SellerApplyPage() {
     }
 
     async function loadState() {
-      const { data: authData } = await supabase.auth.getUser();
-      const currentUser = authData.user ?? null;
+      const { data: authData } = await supabase.auth.getSession();
+      const currentUser = authData.session?.user ?? null;
 
       if (!isMounted) return;
 
@@ -78,7 +78,8 @@ export default function SellerApplyPage() {
       }
 
       setUser(currentUser);
-      loadRole();
+      setRole(getOptimisticRole(currentUser));
+      void loadRole();
 
       const { data: requestData } = await supabase
         .from("seller_verification_requests")

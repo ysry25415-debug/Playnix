@@ -6,7 +6,7 @@ import { type User } from "@supabase/supabase-js";
 
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
-import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
+import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
 import { supabase } from "@/lib/supabase-client";
 
 const MAX_AVATAR_UPLOAD_MB = 5;
@@ -102,8 +102,8 @@ export default function AccountPage() {
     }
 
     async function loadUser() {
-      const { data } = await supabase.auth.getUser();
-      const currentUser = data.user ?? null;
+      const { data } = await supabase.auth.getSession();
+      const currentUser = data.session?.user ?? null;
 
       if (!isMounted) return;
 
@@ -122,8 +122,9 @@ export default function AccountPage() {
           : (currentUser.email?.split("@")[0] ?? "Player")
       );
       setAvatarUrl(typeof metadataAvatar === "string" ? metadataAvatar : "");
+      setRole(getOptimisticRole(currentUser));
       setIsLoading(false);
-      loadRole();
+      void loadRole();
     }
 
     loadUser();

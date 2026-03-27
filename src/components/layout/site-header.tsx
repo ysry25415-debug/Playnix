@@ -6,7 +6,7 @@ import { type User } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 
 import { siteNavigation } from "@/lib/homepage-data";
-import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
+import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
 import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
@@ -56,12 +56,13 @@ export function SiteHeader() {
     }
 
     async function loadUser() {
-      const { data } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getSession();
       if (isMounted) {
-        const currentUser = data.user ?? null;
+        const currentUser = data.session?.user ?? null;
         setUser(currentUser);
         if (currentUser) {
-          await loadRole();
+          setUserRole(getOptimisticRole(currentUser));
+          void loadRole();
         } else {
           setUserRole(null);
         }
@@ -76,7 +77,8 @@ export function SiteHeader() {
         setUser(sessionUser);
 
         if (sessionUser) {
-          await loadRole();
+          setUserRole(getOptimisticRole(sessionUser));
+          void loadRole();
         } else {
           setUserRole(null);
         }

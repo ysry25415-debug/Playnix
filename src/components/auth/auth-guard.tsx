@@ -29,7 +29,7 @@ export function AuthGuard({
         return true;
       }
 
-      const role = await fetchRoleForCurrentUser(supabase, "profile-first");
+      const role = await fetchRoleForCurrentUser(supabase);
 
       return role === requiredRole;
     }

@@ -1,7 +1,6 @@
-import { type SupabaseClient } from "@supabase/supabase-js";
+import { type SupabaseClient, type User } from "@supabase/supabase-js";
 
 export type AppRole = "customer" | "seller" | "admin";
-type RoleLookupMode = "session-first" | "profile-first";
 
 const ROLE_CACHE_PREFIX = "playnix-role-cache:";
 const ROLE_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -46,68 +45,25 @@ function setCachedRole(userId: string, role: AppRole) {
   );
 }
 
-export async function fetchRoleForCurrentUser(
-  supabase: SupabaseClient,
-  mode: RoleLookupMode = "session-first"
-): Promise<AppRole | null> {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const session = sessionData.session;
-  const user = session?.user;
-
+export function getOptimisticRole(user: User | null): AppRole | null {
   if (!user) {
     return null;
   }
 
-  const sessionRole = isAppRole(user.user_metadata?.role) ? user.user_metadata.role : null;
   const cachedRole = getCachedRole(user.id);
-
-  const readProfileRole = async () => {
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    return isAppRole(profileData?.role) ? profileData.role : null;
-  };
-
-  if (mode === "session-first") {
-    if (sessionRole) {
-      setCachedRole(user.id, sessionRole);
-      return sessionRole;
-    }
-
-    if (cachedRole) {
-      return cachedRole;
-    }
-
-    const profileRole = await readProfileRole();
-    if (profileRole) {
-      setCachedRole(user.id, profileRole);
-      return profileRole;
-    }
-  } else {
-    const profileRole = await readProfileRole();
-    if (profileRole) {
-      setCachedRole(user.id, profileRole);
-      return profileRole;
-    }
-
-    if (sessionRole) {
-      setCachedRole(user.id, sessionRole);
-      return sessionRole;
-    }
-
-    if (cachedRole) {
-      return cachedRole;
-    }
+  if (cachedRole === "seller" || cachedRole === "admin") {
+    return cachedRole;
   }
 
-  const accessToken = session?.access_token;
-  if (!accessToken) {
-    return null;
-  }
+  const sessionRole = user.user_metadata?.role;
+  return sessionRole === "seller" || sessionRole === "admin" ? sessionRole : null;
+}
 
+async function readRoleFromApi(
+  supabase: SupabaseClient,
+  accessToken: string,
+  userId: string
+): Promise<AppRole | null> {
   const response = await fetch("/api/me/role", {
     method: "GET",
     headers: {
@@ -120,9 +76,45 @@ export async function fetchRoleForCurrentUser(
   }
 
   const payload = await response.json().catch(() => null);
-  const fallbackRole = isAppRole(payload?.role) ? payload.role : null;
-  if (fallbackRole) {
-    setCachedRole(user.id, fallbackRole);
+  const role = isAppRole(payload?.role) ? payload.role : null;
+
+  if (role) {
+    setCachedRole(userId, role);
   }
-  return fallbackRole;
+
+  return role;
+}
+
+export async function fetchRoleForCurrentUser(
+  supabase: SupabaseClient
+): Promise<AppRole | null> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const session = sessionData.session;
+  const user = session?.user;
+
+  if (!user) {
+    return null;
+  }
+
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const profileRole = isAppRole(profileData?.role) ? profileData.role : null;
+  if (profileRole) {
+    setCachedRole(user.id, profileRole);
+    return profileRole;
+  }
+
+  const accessToken = session?.access_token;
+  if (accessToken) {
+    const apiRole = await readRoleFromApi(supabase, accessToken, user.id);
+    if (apiRole) {
+      return apiRole;
+    }
+  }
+
+  return getOptimisticRole(user);
 }
