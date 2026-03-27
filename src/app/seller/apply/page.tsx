@@ -54,6 +54,38 @@ export default function SellerApplyPage() {
   useEffect(() => {
     let isMounted = true;
 
+    async function loadRole() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        if (isMounted) setRole("customer");
+        return;
+      }
+
+      const response = await fetch("/api/me/role", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!isMounted) return;
+
+      if (!response.ok) {
+        setRole("customer");
+        return;
+      }
+
+      const payload = await response.json().catch(() => null);
+      const profileRole = payload?.role;
+      if (profileRole === "seller" || profileRole === "admin" || profileRole === "customer") {
+        setRole(profileRole);
+      } else {
+        setRole("customer");
+      }
+    }
+
     async function loadState() {
       const { data: authData } = await supabase.auth.getUser();
       const currentUser = authData.user ?? null;
@@ -66,21 +98,7 @@ export default function SellerApplyPage() {
       }
 
       setUser(currentUser);
-
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", currentUser.id)
-        .maybeSingle();
-
-      if (!isMounted) return;
-
-      const profileRole = profileData?.role;
-      if (profileRole === "seller" || profileRole === "admin" || profileRole === "customer") {
-        setRole(profileRole);
-      } else {
-        setRole("customer");
-      }
+      await loadRole();
 
       const { data: requestData } = await supabase
         .from("seller_verification_requests")

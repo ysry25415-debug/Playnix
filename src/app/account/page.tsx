@@ -86,6 +86,38 @@ export default function AccountPage() {
   useEffect(() => {
     let isMounted = true;
 
+    async function loadRole() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        if (isMounted) setRole("customer");
+        return;
+      }
+
+      const response = await fetch("/api/me/role", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!isMounted) return;
+
+      if (!response.ok) {
+        setRole("customer");
+        return;
+      }
+
+      const payload = await response.json().catch(() => null);
+      const currentRole = payload?.role;
+      if (currentRole === "admin" || currentRole === "seller" || currentRole === "customer") {
+        setRole(currentRole);
+      } else {
+        setRole("customer");
+      }
+    }
+
     async function loadUser() {
       const { data } = await supabase.auth.getUser();
       const currentUser = data.user ?? null;
@@ -107,19 +139,7 @@ export default function AccountPage() {
           : (currentUser.email?.split("@")[0] ?? "Player")
       );
       setAvatarUrl(typeof metadataAvatar === "string" ? metadataAvatar : "");
-
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", currentUser.id)
-        .maybeSingle();
-
-      const currentRole = profileData?.role;
-      if (currentRole === "admin" || currentRole === "seller" || currentRole === "customer") {
-        setRole(currentRole);
-      } else {
-        setRole("customer");
-      }
+      await loadRole();
 
       setIsLoading(false);
     }

@@ -43,16 +43,31 @@ export function SiteHeader() {
   useEffect(() => {
     let isMounted = true;
 
-    async function loadRole(userId: string) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", userId)
-        .maybeSingle();
+    async function loadRole() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        if (isMounted) setUserRole("customer");
+        return;
+      }
+
+      const response = await fetch("/api/me/role", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
       if (!isMounted) return;
 
-      const role = data?.role;
+      if (!response.ok) {
+        setUserRole("customer");
+        return;
+      }
+
+      const payload = await response.json().catch(() => null);
+      const role = payload?.role;
       if (role === "admin" || role === "seller" || role === "customer") {
         setUserRole(role);
       } else {
@@ -66,7 +81,7 @@ export function SiteHeader() {
         const currentUser = data.user ?? null;
         setUser(currentUser);
         if (currentUser) {
-          await loadRole(currentUser.id);
+          await loadRole();
         } else {
           setUserRole("customer");
         }
@@ -81,7 +96,7 @@ export function SiteHeader() {
         setUser(sessionUser);
 
         if (sessionUser) {
-          await loadRole(sessionUser.id);
+          await loadRole();
         } else {
           setUserRole("customer");
         }
@@ -96,7 +111,14 @@ export function SiteHeader() {
 
   async function handleLogout() {
     setIsLoggingOut(true);
-    await supabase.auth.signOut({ scope: "local" });
+    await supabase.auth.signOut({ scope: "global" });
+    if (typeof window !== "undefined") {
+      Object.keys(window.localStorage).forEach((key) => {
+        if (key.startsWith("sb-")) {
+          window.localStorage.removeItem(key);
+        }
+      });
+    }
     setUser(null);
     setUserRole("customer");
     router.replace("/auth/login");

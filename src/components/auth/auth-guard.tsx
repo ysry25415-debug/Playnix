@@ -25,13 +25,41 @@ export function AuthGuard({
   useEffect(() => {
     let isMounted = true;
 
-    async function hasRequiredRole(userId: string) {
+    async function fetchOwnRole(): Promise<AppRole | null> {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        return null;
+      }
+
+      const response = await fetch("/api/me/role", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const payload = await response.json().catch(() => null);
+      if (!payload || typeof payload.role !== "string") {
+        return null;
+      }
+
+      return payload.role === "admin" || payload.role === "seller" || payload.role === "customer"
+        ? payload.role
+        : null;
+    }
+
+    async function hasRequiredRole(_userId: string) {
       if (!requiredRole) {
         return true;
       }
-
-      const { data } = await supabase.from("profiles").select("role").eq("id", userId).maybeSingle();
-      return data?.role === requiredRole;
+      const role = await fetchOwnRole();
+      return role === requiredRole;
     }
 
     async function checkAuth() {
