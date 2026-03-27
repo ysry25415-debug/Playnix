@@ -97,6 +97,21 @@ export async function POST(request: NextRequest) {
     if (roleError) {
       return NextResponse.json({ error: roleError.message }, { status: 400 });
     }
+
+    const { data: approvedUser } = await adminClient.auth.admin.getUserById(verificationRow.user_id);
+    if (approvedUser?.user) {
+      const existingMetadata =
+        approvedUser.user.user_metadata && typeof approvedUser.user.user_metadata === "object"
+          ? approvedUser.user.user_metadata
+          : {};
+
+      await adminClient.auth.admin.updateUserById(verificationRow.user_id, {
+        user_metadata: {
+          ...existingMetadata,
+          role: "seller",
+        },
+      });
+    }
   }
 
   const { error: requestUpdateError } = await adminClient

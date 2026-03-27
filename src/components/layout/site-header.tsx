@@ -99,7 +99,7 @@ export function SiteHeader() {
     } finally {
       if (typeof window !== "undefined") {
         Object.keys(window.localStorage).forEach((key) => {
-          if (key.startsWith("sb-")) {
+          if (key.startsWith("sb-") || key.startsWith("playnix-role-cache:")) {
             window.localStorage.removeItem(key);
           }
         });

@@ -55,6 +55,7 @@ export default function SignUpPage() {
         emailRedirectTo: redirectTo,
         data: {
           display_name: defaultDisplayName,
+          role: "customer",
         },
       },
     });

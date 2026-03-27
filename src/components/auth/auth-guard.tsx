@@ -29,11 +29,7 @@ export function AuthGuard({
         return true;
       }
 
-      let role = await fetchRoleForCurrentUser(supabase);
-      if (!role) {
-        await new Promise((resolve) => setTimeout(resolve, 250));
-        role = await fetchRoleForCurrentUser(supabase);
-      }
+      const role = await fetchRoleForCurrentUser(supabase, "profile-first");
 
       return role === requiredRole;
     }

@@ -78,7 +78,7 @@ export default function SellerApplyPage() {
       }
 
       setUser(currentUser);
-      await loadRole();
+      loadRole();
 
       const { data: requestData } = await supabase
         .from("seller_verification_requests")

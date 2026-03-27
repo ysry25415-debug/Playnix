@@ -77,5 +77,18 @@ export async function GET(request: NextRequest) {
   const roleValue = profile?.role;
   const role: AppRole = isAppRole(roleValue) ? roleValue : "customer";
 
+  const currentMetadataRole = user.user_metadata?.role;
+  if (currentMetadataRole !== role) {
+    const existingMetadata =
+      user.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
+
+    await adminClient.auth.admin.updateUserById(user.id, {
+      user_metadata: {
+        ...existingMetadata,
+        role,
+      },
+    });
+  }
+
   return NextResponse.json({ role });
 }

@@ -122,9 +122,8 @@ export default function AccountPage() {
           : (currentUser.email?.split("@")[0] ?? "Player")
       );
       setAvatarUrl(typeof metadataAvatar === "string" ? metadataAvatar : "");
-      await loadRole();
-
       setIsLoading(false);
+      loadRole();
     }
 
     loadUser();
