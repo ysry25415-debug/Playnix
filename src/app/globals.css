@@ -181,6 +181,73 @@ select {
   align-items: center;
 }
 
+.site-actions--user {
+  gap: 10px;
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 5px 10px 5px 6px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.34);
+  background: rgba(10, 18, 10, 0.82);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.user-chip:hover,
+.user-chip:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.58);
+  box-shadow: 0 0 24px rgba(var(--playnix-accent-rgb), 0.14);
+}
+
+.user-chip__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #e8ffd8;
+  background:
+    linear-gradient(180deg, rgba(var(--playnix-accent-rgb), 0.16), rgba(11, 25, 11, 0.96)),
+    #081006;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.34);
+}
+
+.user-chip__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-chip__copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.user-chip__copy strong {
+  font-size: 0.88rem;
+  max-width: 120px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.user-chip__copy span {
+  font-size: 0.72rem;
+  color: var(--playnix-text-muted);
+}
+
 .primary-button,
 .ghost-button {
   display: inline-flex;
@@ -856,6 +923,57 @@ select {
 
 .auth-switch a {
   color: var(--playnix-red-400);
+}
+
+.account-card {
+  max-width: 620px;
+}
+
+.account-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 2px 0 18px;
+  padding: 10px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.2);
+  background: rgba(8, 16, 8, 0.72);
+}
+
+.account-preview__avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  background:
+    linear-gradient(180deg, rgba(var(--playnix-accent-rgb), 0.16), rgba(11, 25, 11, 0.96)),
+    #081006;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.34);
+}
+
+.account-preview__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-preview__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.account-preview__copy strong {
+  font-size: 1.05rem;
+}
+
+.account-preview__copy span {
+  color: var(--playnix-text-secondary);
+  font-size: 0.88rem;
 }
 
 .module-page__shell {

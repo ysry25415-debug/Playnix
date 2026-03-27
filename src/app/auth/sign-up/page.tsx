@@ -46,12 +46,16 @@ export default function SignUpPage() {
       typeof window !== "undefined"
         ? `${window.location.origin}/auth/login?verified=1`
         : undefined;
+    const defaultDisplayName = trimmedEmail.split("@")[0] || "Player";
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: trimmedEmail,
       password,
       options: {
         emailRedirectTo: redirectTo,
+        data: {
+          display_name: defaultDisplayName,
+        },
       },
     });
 
