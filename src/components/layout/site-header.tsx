@@ -15,6 +15,7 @@ export function SiteHeader() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole>("customer");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -94,9 +95,15 @@ export function SiteHeader() {
   }, []);
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    setIsLoggingOut(true);
+    await supabase.auth.signOut({ scope: "local" });
+    setUser(null);
     setUserRole("customer");
-    router.push("/");
+    router.replace("/auth/login");
+    router.refresh();
+    if (typeof window !== "undefined") {
+      window.location.assign("/auth/login");
+    }
   }
 
   const roleLabel =
@@ -150,7 +157,7 @@ export function SiteHeader() {
               </Link>
             ) : null}
             <button className="ghost-button" type="button" onClick={handleLogout}>
-              Log Out
+              {isLoggingOut ? "Logging out..." : "Log Out"}
             </button>
           </div>
         ) : (
