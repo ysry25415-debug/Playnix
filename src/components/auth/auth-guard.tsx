@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase-client";
 
 type AuthGuardProps = {
   children: ReactNode;
-  requiredRole?: AppRole;
+  requiredRole?: AppRole | AppRole[];
   unauthorizedRedirectTo?: string;
 };
 
@@ -30,8 +30,9 @@ export function AuthGuard({
       }
 
       const role = await fetchRoleForCurrentUser(supabase);
+      const requiredRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
 
-      return role === requiredRole;
+      return role ? requiredRoles.includes(role) : false;
     }
 
     async function checkAuth() {

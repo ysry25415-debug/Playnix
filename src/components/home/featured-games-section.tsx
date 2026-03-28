@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { SectionHeading } from "@/components/shared/section-heading";
 import { featuredGames } from "@/lib/homepage-data";
 
@@ -13,8 +15,9 @@ export function FeaturedGamesSection() {
 
         <div className="featured-games-grid">
           {featuredGames.map((game, index) => (
-            <article
+            <Link
               key={game.title}
+              href={`/marketplace/${game.slug}`}
               className={`game-showcase-card game-showcase-card--${index + 1}`}
             >
               <span className="section-eyebrow">{game.eyebrow}</span>
@@ -25,7 +28,7 @@ export function FeaturedGamesSection() {
                   <span key={metric}>{metric}</span>
                 ))}
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </div>

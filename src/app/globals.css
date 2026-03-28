@@ -898,7 +898,9 @@ select {
   color: var(--playnix-text-secondary);
 }
 
-.auth-form input {
+.auth-form input,
+.auth-form textarea,
+.auth-form select {
   min-height: 46px;
   border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.2);
   background: rgba(10, 15, 10, 0.8);
@@ -907,7 +909,15 @@ select {
   outline: none;
 }
 
-.auth-form input:focus {
+.auth-form textarea {
+  min-height: 150px;
+  padding: 12px;
+  resize: vertical;
+}
+
+.auth-form input:focus,
+.auth-form textarea:focus,
+.auth-form select:focus {
   border-color: rgba(var(--playnix-accent-soft-rgb), 0.5);
   box-shadow: 0 0 0 3px rgba(var(--playnix-accent-rgb), 0.14);
 }
@@ -1181,6 +1191,381 @@ select {
   max-width: 11ch;
 }
 
+.seller-center-page {
+  padding: 44px 0 72px;
+}
+
+.seller-center-shell {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  gap: 20px;
+}
+
+.seller-center-sidebar,
+.seller-center-content,
+.marketplace-hub-card,
+.marketplace-tab,
+.marketplace-offer-card {
+  border: 1px solid rgba(35, 48, 64, 0.92);
+  background:
+    linear-gradient(180deg, rgba(var(--playnix-accent-rgb), 0.03), transparent 28%),
+    rgba(16, 23, 34, 0.88);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.seller-center-sidebar {
+  align-self: start;
+  padding: 18px;
+  position: sticky;
+  top: 96px;
+}
+
+.seller-center-sidebar__head h1 {
+  margin: 16px 0 12px;
+  font-size: 1.9rem;
+  line-height: 1.02;
+}
+
+.seller-center-sidebar__head p {
+  margin: 0;
+  color: var(--playnix-text-secondary);
+  line-height: 1.7;
+}
+
+.seller-center-nav {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.seller-center-nav__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.14);
+  color: var(--playnix-text-secondary);
+  background: rgba(8, 13, 19, 0.62);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.seller-center-nav__item small {
+  color: #d3ffb1;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.seller-center-nav__item:hover,
+.seller-center-nav__item:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.34);
+  background: rgba(11, 22, 14, 0.78);
+}
+
+.seller-center-nav__item--active {
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.54);
+  background: rgba(16, 40, 19, 0.82);
+  color: var(--playnix-text-primary);
+}
+
+.seller-center-content {
+  padding: 24px;
+  min-height: 620px;
+}
+
+.seller-module h2 {
+  margin: 16px 0 12px;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1;
+}
+
+.seller-module p {
+  color: var(--playnix-text-secondary);
+  line-height: 1.8;
+}
+
+.seller-module__highlights,
+.seller-module__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.seller-module__stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.seller-module__card {
+  padding: 18px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.18);
+  background: rgba(9, 15, 23, 0.72);
+  display: grid;
+  gap: 8px;
+}
+
+.seller-module__card strong {
+  font-size: 1.1rem;
+}
+
+.seller-module__card span {
+  color: var(--playnix-text-muted);
+  line-height: 1.6;
+}
+
+.seller-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.seller-list__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(160px, 0.7fr) minmax(160px, 0.7fr);
+  gap: 14px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.18);
+  background: rgba(8, 15, 20, 0.7);
+}
+
+.seller-list__item--stacked {
+  grid-template-columns: minmax(0, 1.6fr) minmax(180px, 0.7fr) minmax(260px, 0.9fr);
+}
+
+.seller-list__main,
+.seller-list__meta,
+.seller-list__actions {
+  display: grid;
+  gap: 6px;
+}
+
+.seller-list__main strong,
+.seller-list__meta strong {
+  font-size: 1rem;
+}
+
+.seller-list__main span,
+.seller-list__meta span,
+.seller-list__item p {
+  color: var(--playnix-text-secondary);
+}
+
+.seller-list__item p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.seller-list__actions {
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: end;
+}
+
+.seller-list__actions .ghost-button,
+.seller-list__actions .primary-button,
+.seller-list__actions button {
+  min-height: 42px;
+}
+
+.seller-list__delete {
+  border-color: rgba(255, 95, 95, 0.45);
+  color: #ffd6d6;
+  background: rgba(45, 14, 14, 0.72);
+}
+
+.seller-offer-form {
+  margin-top: 24px;
+}
+
+.seller-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.marketplace-hub-page {
+  padding-top: 44px;
+}
+
+.marketplace-hub-shell h1 {
+  max-width: 14ch;
+}
+
+.marketplace-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.marketplace-hub-card {
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
+}
+
+.marketplace-hub-card:hover,
+.marketplace-hub-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.4);
+}
+
+.marketplace-hub-card h2 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.marketplace-hub-card p {
+  margin: 0;
+  color: var(--playnix-text-secondary);
+  line-height: 1.8;
+}
+
+.marketplace-hub-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.marketplace-hub-card__chips span,
+.marketplace-offer-card__meta span {
+  padding: 8px 12px;
+  background: rgba(9, 15, 22, 0.74);
+  color: var(--playnix-text-secondary);
+  font-size: 0.82rem;
+}
+
+.marketplace-game-page {
+  display: grid;
+  gap: 24px;
+}
+
+.marketplace-game-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.marketplace-game-hero h1 {
+  margin: 16px 0 12px;
+  font-size: clamp(2.4rem, 6vw, 4.2rem);
+  line-height: 0.96;
+}
+
+.marketplace-game-hero p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--playnix-text-secondary);
+  line-height: 1.8;
+}
+
+.marketplace-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.marketplace-tab {
+  padding: 18px;
+  display: grid;
+  gap: 8px;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
+}
+
+.marketplace-tab strong {
+  font-size: 1rem;
+}
+
+.marketplace-tab span {
+  color: var(--playnix-text-secondary);
+  line-height: 1.7;
+}
+
+.marketplace-tab:hover,
+.marketplace-tab:focus-visible,
+.marketplace-tab--active {
+  transform: translateY(-2px);
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.45);
+}
+
+.marketplace-tab--active {
+  background:
+    linear-gradient(180deg, rgba(var(--playnix-accent-rgb), 0.08), transparent 30%),
+    rgba(14, 30, 16, 0.9);
+}
+
+.marketplace-empty {
+  padding: 22px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.18);
+  background: rgba(8, 13, 19, 0.7);
+  display: grid;
+  gap: 8px;
+}
+
+.marketplace-empty strong {
+  font-size: 1rem;
+}
+
+.marketplace-empty span {
+  color: var(--playnix-text-secondary);
+}
+
+.marketplace-offer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.marketplace-offer-card {
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.marketplace-offer-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.marketplace-offer-card h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.marketplace-offer-card p {
+  margin: 0;
+  color: var(--playnix-text-secondary);
+  line-height: 1.8;
+}
+
+.marketplace-offer-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.marketplace-offer-card__hint {
+  color: var(--playnix-text-muted);
+  line-height: 1.7;
+  font-size: 0.86rem;
+}
+
 .site-footer {
   padding: 24px 0 40px;
 }
@@ -1209,7 +1594,12 @@ select {
   .operating-grid,
   .category-grid,
   .trust-grid,
-  .featured-games-grid {
+  .featured-games-grid,
+  .marketplace-hub-grid,
+  .marketplace-offer-grid,
+  .marketplace-tabs,
+  .seller-module__highlights,
+  .seller-module__stats {
     grid-template-columns: 1fr;
   }
 
@@ -1225,6 +1615,19 @@ select {
   .hero-stage__floating--right {
     right: 18px;
     bottom: 44px;
+  }
+
+  .seller-center-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .seller-center-sidebar {
+    position: static;
+  }
+
+  .seller-list__item,
+  .seller-list__item--stacked {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1283,6 +1686,14 @@ select {
   .admin-refresh-button {
     margin-left: 0;
   }
+
+  .marketplace-game-hero {
+    flex-direction: column;
+  }
+
+  .seller-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1331,5 +1742,10 @@ select {
 
   .hero-stage__bottom--minimal {
     top: 62%;
+  }
+
+  .seller-list__actions {
+    grid-auto-flow: row;
+    justify-content: stretch;
   }
 }

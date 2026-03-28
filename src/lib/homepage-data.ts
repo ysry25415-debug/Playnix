@@ -22,6 +22,7 @@ export const heroTags = [
 
 export const featuredGames = [
   {
+    slug: "minecraft",
     title: "Minecraft",
     eyebrow: "Hero Universe",
     description:
@@ -29,6 +30,7 @@ export const featuredGames = [
     metrics: ["1,200+ offers", "Fast delivery", "Premium skins"],
   },
   {
+    slug: "roblox",
     title: "Roblox",
     eyebrow: "Digital Trade Lane",
     description:
@@ -36,6 +38,7 @@ export const featuredGames = [
     metrics: ["Items", "Top ups", "Gift cards"],
   },
   {
+    slug: "arc-raiders",
     title: "Arc Raiders",
     eyebrow: "Extraction Heat",
     description:
@@ -43,6 +46,7 @@ export const featuredGames = [
     metrics: ["Accounts", "Credits", "Boosting"],
   },
   {
+    slug: "fortnite",
     title: "Fortnite",
     eyebrow: "Hot Listings",
     description:
@@ -50,6 +54,7 @@ export const featuredGames = [
     metrics: ["Exclusive bundles", "Account warranty", "Rare cosmetics"],
   },
   {
+    slug: "valorant",
     title: "Valorant",
     eyebrow: "Ranked Services",
     description:
@@ -57,6 +62,7 @@ export const featuredGames = [
     metrics: ["Boost requests", "Trusted sellers", "Live order chat"],
   },
   {
+    slug: "pubg-mobile",
     title: "PUBG Mobile",
     eyebrow: "Battle Royale",
     description:
