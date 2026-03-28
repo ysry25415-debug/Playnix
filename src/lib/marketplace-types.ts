@@ -15,6 +15,21 @@ export type OfferRow = {
   updated_at: string;
 };
 
+export type OfferImageRow = {
+  id: string;
+  offer_id: string;
+  seller_id: string;
+  storage_path: string;
+  public_url: string;
+  is_primary: boolean;
+  sort_order: number;
+  created_at: string;
+};
+
+export type OfferWithImagesRow = OfferRow & {
+  offer_images?: OfferImageRow[] | null;
+};
+
 export type OrderStatus = "pending" | "paid" | "delivered" | "cancelled";
 
 export type OrderRow = {

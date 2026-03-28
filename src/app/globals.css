@@ -1347,6 +1347,18 @@ select {
   gap: 6px;
 }
 
+.seller-list__headline {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.seller-list__headline-copy {
+  display: grid;
+  gap: 6px;
+}
+
 .seller-list__main strong,
 .seller-list__meta strong {
   font-size: 1rem;
@@ -1381,6 +1393,24 @@ select {
   background: rgba(45, 14, 14, 0.72);
 }
 
+.seller-list__thumb {
+  width: 104px;
+  height: 104px;
+  object-fit: cover;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.22);
+  background: rgba(6, 12, 18, 0.92);
+}
+
+.seller-list__thumb--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--playnix-text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .seller-offer-form {
   margin-top: 24px;
 }
@@ -1389,6 +1419,108 @@ select {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.seller-offer-images {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.seller-offer-images__copy {
+  display: grid;
+  gap: 4px;
+}
+
+.seller-offer-images__copy span,
+.seller-offer-images__status span,
+.seller-offer-images__empty span {
+  color: var(--playnix-text-secondary);
+  line-height: 1.7;
+}
+
+.seller-offer-images input[type="file"] {
+  padding: 10px 12px;
+}
+
+.seller-offer-images__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.seller-offer-images__empty {
+  padding: 18px;
+  border: 1px dashed rgba(var(--playnix-accent-soft-rgb), 0.3);
+  background: rgba(8, 14, 20, 0.64);
+  display: grid;
+  gap: 6px;
+}
+
+.seller-offer-image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.seller-offer-image-card {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.18);
+  background: rgba(8, 14, 20, 0.72);
+}
+
+.seller-offer-image-card--primary {
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.48);
+  box-shadow: 0 0 0 1px rgba(var(--playnix-accent-rgb), 0.18);
+}
+
+.seller-offer-image-card__preview {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.18);
+  background: rgba(5, 9, 14, 0.94);
+}
+
+.seller-offer-image-card__meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.seller-offer-image-card__meta div {
+  display: grid;
+  gap: 4px;
+}
+
+.seller-offer-image-card__meta strong {
+  font-size: 0.96rem;
+}
+
+.seller-offer-image-card__meta span {
+  color: var(--playnix-text-secondary);
+  font-size: 0.82rem;
+}
+
+.seller-offer-image-card__badge {
+  padding: 6px 10px;
+  background: rgba(var(--playnix-accent-rgb), 0.16);
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.34);
+  color: #f3ffe8;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.seller-offer-image-card__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .marketplace-hub-page {
@@ -1534,6 +1666,24 @@ select {
   padding: 22px;
   display: grid;
   gap: 14px;
+}
+
+.marketplace-offer-card__media {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.18);
+  background: rgba(6, 10, 16, 0.96);
+}
+
+.marketplace-offer-card__media--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--playnix-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.82rem;
 }
 
 .marketplace-offer-card__head {
@@ -1694,6 +1844,12 @@ select {
   .seller-form-grid {
     grid-template-columns: 1fr;
   }
+
+  .seller-offer-image-grid,
+  .marketplace-offer-grid,
+  .marketplace-tabs {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1747,5 +1903,15 @@ select {
   .seller-list__actions {
     grid-auto-flow: row;
     justify-content: stretch;
+  }
+
+  .seller-list__headline,
+  .seller-offer-image-card__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .seller-list__thumb {
+    width: 100%;
+    height: 220px;
   }
 }

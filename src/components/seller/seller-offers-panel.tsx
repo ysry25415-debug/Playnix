@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { getPrimaryOfferImage, OFFER_IMAGES_BUCKET } from "@/lib/offer-images";
 import { getMarketplaceGame } from "@/lib/marketplace-data";
-import { type OfferRow } from "@/lib/marketplace-types";
+import { type OfferWithImagesRow } from "@/lib/marketplace-types";
 import { supabase } from "@/lib/supabase-client";
 
 export function SellerOffersPanel() {
-  const [offers, setOffers] = useState<OfferRow[]>([]);
+  const [offers, setOffers] = useState<OfferWithImagesRow[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -34,7 +35,7 @@ export function SellerOffersPanel() {
       const { data, error: offersError } = await supabase
         .from("offers")
         .select(
-          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_time,stock_count,status,created_at,updated_at"
+          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_time,stock_count,status,created_at,updated_at,offer_images(id,offer_id,seller_id,storage_path,public_url,is_primary,sort_order,created_at)"
         )
         .eq("seller_id", user.id)
         .order("created_at", { ascending: false });
@@ -48,7 +49,7 @@ export function SellerOffersPanel() {
         return;
       }
 
-      setOffers((data ?? []) as OfferRow[]);
+      setOffers((data ?? []) as OfferWithImagesRow[]);
       setIsLoading(false);
     }
 
@@ -77,6 +78,9 @@ export function SellerOffersPanel() {
       return;
     }
 
+    const offer = offers.find((item) => item.id === offerId);
+    const imagePaths = offer?.offer_images?.map((image) => image.storage_path) ?? [];
+
     const { error: deleteError } = await supabase
       .from("offers")
       .delete()
@@ -88,6 +92,16 @@ export function SellerOffersPanel() {
     if (deleteError) {
       setError(deleteError.message);
       return;
+    }
+
+    if (imagePaths.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from(OFFER_IMAGES_BUCKET)
+        .remove(imagePaths);
+
+      if (storageError) {
+        console.error("Offer image files could not be fully removed.", storageError);
+      }
     }
 
     setOffers((current) => current.filter((offer) => offer.id !== offerId));
@@ -149,15 +163,26 @@ export function SellerOffersPanel() {
         <div className="seller-list">
           {offers.map((offer) => {
             const game = getMarketplaceGame(offer.game_slug);
+            const primaryImage = getPrimaryOfferImage(offer.offer_images);
 
             return (
               <article key={offer.id} className="seller-list__item seller-list__item--stacked">
                 <div className="seller-list__main">
-                  <strong>{offer.title}</strong>
-                  <span>
-                    {game?.title ?? offer.game_slug} / {offer.category_slug}
-                  </span>
-                  <p>{offer.description}</p>
+                  <div className="seller-list__headline">
+                    {primaryImage ? (
+                      <img className="seller-list__thumb" src={primaryImage.public_url} alt={offer.title} />
+                    ) : (
+                      <div className="seller-list__thumb seller-list__thumb--placeholder">No image</div>
+                    )}
+
+                    <div className="seller-list__headline-copy">
+                      <strong>{offer.title}</strong>
+                      <span>
+                        {game?.title ?? offer.game_slug} / {offer.category_slug}
+                      </span>
+                      <p>{offer.description}</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="seller-list__meta">

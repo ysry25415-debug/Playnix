@@ -1,10 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  buildExistingOfferImageKey,
+  buildPendingOfferImageKey,
+  MAX_OFFER_IMAGES,
+  MAX_OFFER_IMAGE_SIZE_BYTES,
+  OFFER_IMAGES_BUCKET,
+  sanitizeOfferImageFileName,
+} from "@/lib/offer-images";
 import { getMarketplaceGame, marketplaceGames } from "@/lib/marketplace-data";
-import { type OfferRow, type OfferStatus } from "@/lib/marketplace-types";
+import { type OfferImageRow, type OfferRow, type OfferStatus } from "@/lib/marketplace-types";
 import { supabase } from "@/lib/supabase-client";
 
 type OfferEditorFormProps = {
@@ -14,7 +22,34 @@ type OfferEditorFormProps = {
   initialCategorySlug?: string;
 };
 
+type PendingOfferImage = {
+  key: string;
+  file: File;
+  previewUrl: string;
+};
+
 const offerStatuses: OfferStatus[] = ["draft", "active", "paused", "sold_out"];
+
+function resolvePrimaryImageKey(
+  currentKey: string | null,
+  existingImages: OfferImageRow[],
+  pendingImages: PendingOfferImage[]
+) {
+  const allKeys = [
+    ...existingImages.map((image) => buildExistingOfferImageKey(image.id)),
+    ...pendingImages.map((image) => image.key),
+  ];
+
+  if (allKeys.length === 0) {
+    return null;
+  }
+
+  return currentKey && allKeys.includes(currentKey) ? currentKey : allKeys[0];
+}
+
+function revokePendingPreview(image: PendingOfferImage) {
+  URL.revokeObjectURL(image.previewUrl);
+}
 
 export function OfferEditorForm({
   mode,
@@ -24,19 +59,54 @@ export function OfferEditorForm({
 }: OfferEditorFormProps) {
   const router = useRouter();
   const [gameSlug, setGameSlug] = useState(initialGameSlug ?? marketplaceGames[0].slug);
-  const [categorySlug, setCategorySlug] = useState(initialCategorySlug ?? marketplaceGames[0].categories[0].slug);
+  const [categorySlug, setCategorySlug] = useState(
+    initialCategorySlug ?? marketplaceGames[0].categories[0].slug
+  );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priceUsd, setPriceUsd] = useState("10");
   const [deliveryTime, setDeliveryTime] = useState("Instant delivery");
   const [stockCount, setStockCount] = useState("1");
   const [status, setStatus] = useState<OfferStatus>("active");
+  const [existingImages, setExistingImages] = useState<OfferImageRow[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingOfferImage[]>([]);
+  const [removedExistingImages, setRemovedExistingImages] = useState<OfferImageRow[]>([]);
+  const [primaryImageKey, setPrimaryImageKey] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(mode === "edit");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const pendingImagesRef = useRef<PendingOfferImage[]>([]);
 
   const activeGame = useMemo(() => getMarketplaceGame(gameSlug) ?? marketplaceGames[0], [gameSlug]);
+  const totalImageCount = existingImages.length + pendingImages.length;
+
+  const imageCards = useMemo(() => {
+    return [
+      ...existingImages.map((image) => ({
+        key: buildExistingOfferImageKey(image.id),
+        previewUrl: image.public_url,
+        isPrimary: primaryImageKey === buildExistingOfferImageKey(image.id),
+        isPending: false,
+      })),
+      ...pendingImages.map((image) => ({
+        key: image.key,
+        previewUrl: image.previewUrl,
+        isPrimary: primaryImageKey === image.key,
+        isPending: true,
+      })),
+    ];
+  }, [existingImages, pendingImages, primaryImageKey]);
+
+  useEffect(() => {
+    pendingImagesRef.current = pendingImages;
+  }, [pendingImages]);
+
+  useEffect(() => {
+    return () => {
+      pendingImagesRef.current.forEach(revokePendingPreview);
+    };
+  }, []);
 
   useEffect(() => {
     if (!activeGame.categories.find((category) => category.slug === categorySlug)) {
@@ -52,6 +122,9 @@ export function OfferEditorForm({
     let isMounted = true;
 
     async function loadOffer() {
+      setError("");
+      setSuccess("");
+
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData.session?.user;
 
@@ -77,7 +150,29 @@ export function OfferEditorForm({
         return;
       }
 
+      const { data: imagesData, error: imagesError } = await supabase
+        .from("offer_images")
+        .select("id,offer_id,seller_id,storage_path,public_url,is_primary,sort_order,created_at")
+        .eq("offer_id", offerId)
+        .eq("seller_id", user.id)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (!isMounted) return;
+
+      if (imagesError) {
+        setError(imagesError.message);
+        setIsLoading(false);
+        return;
+      }
+
       const offer = data as OfferRow;
+      const offerImages = (imagesData ?? []) as OfferImageRow[];
+      const primaryExistingImage = offerImages.find((image) => image.is_primary) ?? offerImages[0] ?? null;
+
+      pendingImagesRef.current.forEach(revokePendingPreview);
+      pendingImagesRef.current = [];
+
       setGameSlug(offer.game_slug);
       setCategorySlug(offer.category_slug);
       setTitle(offer.title);
@@ -86,6 +181,12 @@ export function OfferEditorForm({
       setDeliveryTime(offer.delivery_time);
       setStockCount(String(offer.stock_count));
       setStatus(offer.status);
+      setExistingImages(offerImages);
+      setPendingImages([]);
+      setRemovedExistingImages([]);
+      setPrimaryImageKey(
+        primaryExistingImage ? buildExistingOfferImageKey(primaryExistingImage.id) : null
+      );
       setIsLoading(false);
     }
 
@@ -95,6 +196,93 @@ export function OfferEditorForm({
       isMounted = false;
     };
   }, [mode, offerId]);
+
+  function handleImageSelection(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+
+    if (files.length === 0) {
+      return;
+    }
+
+    const remainingSlots = MAX_OFFER_IMAGES - totalImageCount;
+    if (remainingSlots <= 0) {
+      setError(`You can upload up to ${MAX_OFFER_IMAGES} images per offer.`);
+      return;
+    }
+
+    const acceptedImages: PendingOfferImage[] = [];
+    const notices: string[] = [];
+
+    files.slice(0, remainingSlots).forEach((file) => {
+      if (!file.type.startsWith("image/")) {
+        notices.push(`${file.name} is not an image file.`);
+        return;
+      }
+
+      if (file.size > MAX_OFFER_IMAGE_SIZE_BYTES) {
+        notices.push(`${file.name} is larger than 5 MB.`);
+        return;
+      }
+
+      acceptedImages.push({
+        key: buildPendingOfferImageKey(crypto.randomUUID()),
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
+    });
+
+    if (files.length > remainingSlots) {
+      notices.push(`Only ${remainingSlots} more image slots were available.`);
+    }
+
+    if (acceptedImages.length === 0) {
+      setError(notices[0] ?? "Please choose valid product images.");
+      return;
+    }
+
+    const nextPendingImages = [...pendingImages, ...acceptedImages];
+    setPendingImages(nextPendingImages);
+    setPrimaryImageKey(resolvePrimaryImageKey(primaryImageKey, existingImages, nextPendingImages));
+    setSuccess("");
+    setError(notices.join(" "));
+  }
+
+  function handleRemoveExistingImage(imageId: string) {
+    const image = existingImages.find((item) => item.id === imageId);
+    if (!image) {
+      return;
+    }
+
+    const nextExistingImages = existingImages.filter((item) => item.id !== imageId);
+    setExistingImages(nextExistingImages);
+    setRemovedExistingImages([...removedExistingImages, image]);
+    setPrimaryImageKey(
+      resolvePrimaryImageKey(
+        primaryImageKey === buildExistingOfferImageKey(imageId) ? null : primaryImageKey,
+        nextExistingImages,
+        pendingImages
+      )
+    );
+  }
+
+  function handleRemovePendingImage(imageKey: string) {
+    const image = pendingImages.find((item) => item.key === imageKey);
+    if (!image) {
+      return;
+    }
+
+    revokePendingPreview(image);
+    const nextPendingImages = pendingImages.filter((item) => item.key !== imageKey);
+    setPendingImages(nextPendingImages);
+    setPrimaryImageKey(
+      resolvePrimaryImageKey(
+        primaryImageKey === imageKey ? null : primaryImageKey,
+        existingImages,
+        nextPendingImages
+      )
+    );
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -119,6 +307,17 @@ export function OfferEditorForm({
       return;
     }
 
+    if (totalImageCount === 0) {
+      setError("Please upload at least one product image.");
+      return;
+    }
+
+    const selectedPrimaryKey = resolvePrimaryImageKey(primaryImageKey, existingImages, pendingImages);
+    if (!selectedPrimaryKey) {
+      setError("Choose a main image for this offer.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const { data: sessionData } = await supabase.auth.getSession();
@@ -130,7 +329,8 @@ export function OfferEditorForm({
       return;
     }
 
-    const payload = {
+    const nextOfferId = offerId ?? crypto.randomUUID();
+    const basePayload = {
       seller_id: user.id,
       game_slug: gameSlug,
       category_slug: categorySlug,
@@ -142,36 +342,191 @@ export function OfferEditorForm({
       status,
     };
 
-    if (mode === "create") {
-      const { error: insertError } = await supabase.from("offers").insert(payload);
+    const createdStoragePaths: string[] = [];
+    const createdImageIds: string[] = [];
+    const insertedImageEntries: Array<{ key: string; row: OfferImageRow }> = [];
+    let offerWasCreated = false;
 
-      setIsSubmitting(false);
+    try {
+      if (mode === "create") {
+        const { error: insertError } = await supabase.from("offers").insert({
+          id: nextOfferId,
+          ...basePayload,
+        });
 
-      if (insertError) {
-        setError(insertError.message);
+        if (insertError) {
+          throw new Error(insertError.message);
+        }
+
+        offerWasCreated = true;
+      } else {
+        const { error: updateError } = await supabase
+          .from("offers")
+          .update(basePayload)
+          .eq("id", nextOfferId)
+          .eq("seller_id", user.id);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+      }
+
+      for (const pendingImage of pendingImages) {
+        const imagePath = `${user.id}/${nextOfferId}/${crypto.randomUUID()}-${sanitizeOfferImageFileName(
+          pendingImage.file.name
+        )}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from(OFFER_IMAGES_BUCKET)
+          .upload(imagePath, pendingImage.file, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: pendingImage.file.type,
+          });
+
+        if (uploadError) {
+          throw new Error(uploadError.message);
+        }
+
+        createdStoragePaths.push(imagePath);
+
+        const publicUrl = supabase.storage.from(OFFER_IMAGES_BUCKET).getPublicUrl(imagePath).data.publicUrl;
+        const { data: imageRow, error: insertImageError } = await supabase
+          .from("offer_images")
+          .insert({
+            offer_id: nextOfferId,
+            seller_id: user.id,
+            storage_path: imagePath,
+            public_url: publicUrl,
+            is_primary: false,
+            sort_order: 0,
+          })
+          .select("id,offer_id,seller_id,storage_path,public_url,is_primary,sort_order,created_at")
+          .single();
+
+        if (insertImageError || !imageRow) {
+          throw new Error(insertImageError?.message ?? "Could not save uploaded image.");
+        }
+
+        const typedImageRow = imageRow as OfferImageRow;
+        createdImageIds.push(typedImageRow.id);
+        insertedImageEntries.push({ key: pendingImage.key, row: typedImageRow });
+      }
+
+      const finalImageEntries = [
+        ...existingImages.map((image) => ({
+          key: buildExistingOfferImageKey(image.id),
+          row: image,
+        })),
+        ...insertedImageEntries,
+      ];
+
+      const selectedPrimaryImage =
+        finalImageEntries.find((entry) => entry.key === selectedPrimaryKey) ?? finalImageEntries[0];
+
+      if (!selectedPrimaryImage) {
+        throw new Error("Please keep at least one image on the offer.");
+      }
+
+      const { error: resetPrimaryError } = await supabase
+        .from("offer_images")
+        .update({ is_primary: false })
+        .eq("offer_id", nextOfferId)
+        .eq("seller_id", user.id);
+
+      if (resetPrimaryError) {
+        throw new Error(resetPrimaryError.message);
+      }
+
+      const sortResults = await Promise.all(
+        finalImageEntries.map((entry, index) =>
+          supabase
+            .from("offer_images")
+            .update({ sort_order: index })
+            .eq("id", entry.row.id)
+            .eq("seller_id", user.id)
+        )
+      );
+
+      const sortError = sortResults.find((result) => result.error)?.error;
+      if (sortError) {
+        throw new Error(sortError.message);
+      }
+
+      const { error: setPrimaryError } = await supabase
+        .from("offer_images")
+        .update({ is_primary: true })
+        .eq("id", selectedPrimaryImage.row.id)
+        .eq("seller_id", user.id);
+
+      if (setPrimaryError) {
+        throw new Error(setPrimaryError.message);
+      }
+
+      if (removedExistingImages.length > 0) {
+        const removedImageIds = removedExistingImages.map((image) => image.id);
+        const removedStoragePaths = removedExistingImages.map((image) => image.storage_path);
+
+        const { error: deleteRowsError } = await supabase
+          .from("offer_images")
+          .delete()
+          .eq("seller_id", user.id)
+          .in("id", removedImageIds);
+
+        if (deleteRowsError) {
+          throw new Error(deleteRowsError.message);
+        }
+
+        const { error: deleteStorageError } = await supabase.storage
+          .from(OFFER_IMAGES_BUCKET)
+          .remove(removedStoragePaths);
+
+        if (deleteStorageError) {
+          console.error("Offer image files could not be fully removed.", deleteStorageError);
+        }
+      }
+
+      pendingImages.forEach(revokePendingPreview);
+      pendingImagesRef.current = [];
+
+      const finalImages = finalImageEntries.map((entry, index) => ({
+        ...entry.row,
+        is_primary: entry.row.id === selectedPrimaryImage.row.id,
+        sort_order: index,
+      }));
+
+      if (mode === "create") {
+        setPendingImages([]);
+        router.push("/sell/offers");
+        router.refresh();
         return;
       }
 
-      router.push("/sell/offers");
+      setExistingImages(finalImages);
+      setPendingImages([]);
+      setRemovedExistingImages([]);
+      setPrimaryImageKey(buildExistingOfferImageKey(selectedPrimaryImage.row.id));
+      setSuccess("Offer updated successfully.");
       router.refresh();
-      return;
+    } catch (submitError) {
+      if (mode === "create" && offerWasCreated) {
+        if (createdImageIds.length > 0) {
+          await supabase.from("offer_images").delete().eq("seller_id", user.id).in("id", createdImageIds);
+        }
+
+        if (createdStoragePaths.length > 0) {
+          await supabase.storage.from(OFFER_IMAGES_BUCKET).remove(createdStoragePaths);
+        }
+
+        await supabase.from("offers").delete().eq("id", nextOfferId).eq("seller_id", user.id);
+      }
+
+      setError(
+        submitError instanceof Error ? submitError.message : "Could not save this offer right now."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const { error: updateError } = await supabase
-      .from("offers")
-      .update(payload)
-      .eq("id", offerId)
-      .eq("seller_id", user.id);
-
-    setIsSubmitting(false);
-
-    if (updateError) {
-      setError(updateError.message);
-      return;
-    }
-
-    setSuccess("Offer updated successfully.");
-    router.refresh();
   }
 
   return (
@@ -183,8 +538,8 @@ export function OfferEditorForm({
           : "Update your offer details and marketplace placement."}
       </h2>
       <p>
-        Choose the game, section, price, stock, and delivery language. This determines exactly where
-        your listing appears on the buyer-facing marketplace.
+        Choose the game, section, price, stock, delivery language, and the product gallery. Your
+        main image becomes the preview customers see first.
       </p>
 
       {isLoading ? (
@@ -285,6 +640,88 @@ export function OfferEditorForm({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="seller-offer-images">
+            <div className="seller-offer-images__copy">
+              <label htmlFor="offer-images">Offer images</label>
+              <span>
+                Upload up to {MAX_OFFER_IMAGES} images. Pick one main image to be the customer-facing
+                thumbnail.
+              </span>
+            </div>
+
+            <input
+              id="offer-images"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              multiple
+              onChange={handleImageSelection}
+            />
+
+            <div className="seller-offer-images__status">
+              <span>{totalImageCount} image(s) selected</span>
+              <span>Main image appears first for customers.</span>
+            </div>
+
+            {imageCards.length === 0 ? (
+              <div className="seller-offer-images__empty">
+                <strong>No images yet.</strong>
+                <span>Add at least one product image before publishing this offer.</span>
+              </div>
+            ) : (
+              <div className="seller-offer-image-grid">
+                {imageCards.map((image, index) => (
+                  <article
+                    key={image.key}
+                    className={
+                      image.isPrimary
+                        ? "seller-offer-image-card seller-offer-image-card--primary"
+                        : "seller-offer-image-card"
+                    }
+                  >
+                    <img
+                      className="seller-offer-image-card__preview"
+                      src={image.previewUrl}
+                      alt={`${title || "Offer"} preview ${index + 1}`}
+                    />
+
+                    <div className="seller-offer-image-card__meta">
+                      <div>
+                        <strong>{image.isPrimary ? "Main image" : `Image ${index + 1}`}</strong>
+                        <span>{image.isPending ? "Ready to upload" : "Saved on this offer"}</span>
+                      </div>
+
+                      {image.isPrimary ? (
+                        <span className="seller-offer-image-card__badge">Main</span>
+                      ) : null}
+                    </div>
+
+                    <div className="seller-offer-image-card__actions">
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() => setPrimaryImageKey(image.key)}
+                      >
+                        {image.isPrimary ? "Selected" : "Set as Main"}
+                      </button>
+
+                      <button
+                        className="ghost-button seller-list__delete"
+                        type="button"
+                        onClick={() =>
+                          image.isPending
+                            ? handleRemovePendingImage(image.key)
+                            : handleRemoveExistingImage(image.key.replace("existing:", ""))
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
 
           {error ? <p className="auth-feedback auth-feedback--error">{error}</p> : null}

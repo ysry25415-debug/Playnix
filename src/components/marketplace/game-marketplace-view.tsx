@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { getPrimaryOfferImage } from "@/lib/offer-images";
 import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { type MarketplaceGame } from "@/lib/marketplace-data";
-import { type OfferRow } from "@/lib/marketplace-types";
+import { type OfferWithImagesRow } from "@/lib/marketplace-types";
 import { supabase } from "@/lib/supabase-client";
 
 type GameMarketplaceViewProps = {
@@ -17,7 +18,7 @@ export function GameMarketplaceView({
   game,
   activeCategorySlug,
 }: GameMarketplaceViewProps) {
-  const [offers, setOffers] = useState<OfferRow[]>([]);
+  const [offers, setOffers] = useState<OfferWithImagesRow[]>([]);
   const [viewerRole, setViewerRole] = useState<AppRole | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -57,7 +58,7 @@ export function GameMarketplaceView({
       const { data, error: offersError } = await supabase
         .from("offers")
         .select(
-          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_time,stock_count,status,created_at,updated_at"
+          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_time,stock_count,status,created_at,updated_at,offer_images(id,offer_id,seller_id,storage_path,public_url,is_primary,sort_order,created_at)"
         )
         .eq("game_slug", game.slug)
         .eq("category_slug", activeCategory.slug)
@@ -73,7 +74,7 @@ export function GameMarketplaceView({
         return;
       }
 
-      setOffers((data ?? []) as OfferRow[]);
+      setOffers((data ?? []) as OfferWithImagesRow[]);
       setIsLoading(false);
     }
 
@@ -85,7 +86,7 @@ export function GameMarketplaceView({
     };
   }, [activeCategory.slug, game.slug]);
 
-  async function handleBuy(offer: OfferRow) {
+  async function handleBuy(offer: OfferWithImagesRow) {
     setError("");
     setSuccess("");
 
@@ -216,43 +217,59 @@ export function GameMarketplaceView({
         </div>
       ) : (
         <div className="marketplace-offer-grid">
-          {offers.map((offer) => (
-            <article key={offer.id} className="marketplace-offer-card">
-              <div className="marketplace-offer-card__head">
-                <span className="section-eyebrow">{activeCategory.title}</span>
-                <strong>${offer.price_usd.toFixed(2)}</strong>
-              </div>
+          {offers.map((offer) => {
+            const primaryImage = getPrimaryOfferImage(offer.offer_images);
 
-              <h3>{offer.title}</h3>
-              <p>{offer.description}</p>
-
-              <div className="marketplace-offer-card__meta">
-                <span>{offer.delivery_time}</span>
-                <span>Stock: {offer.stock_count}</span>
-              </div>
-
-              <div className="hero-actions">
-                {viewerId === offer.seller_id ? (
-                  <Link className="ghost-button" href={`/sell/offers/${offer.id}/edit`}>
-                    Manage Offer
-                  </Link>
-                ) : viewerRole === "customer" ? (
-                  <button
-                    className="primary-button"
-                    type="button"
-                    onClick={() => handleBuy(offer)}
-                    disabled={buyingId === offer.id}
-                  >
-                    {buyingId === offer.id ? "Placing Order..." : "Buy Now"}
-                  </button>
+            return (
+              <article key={offer.id} className="marketplace-offer-card">
+                {primaryImage ? (
+                  <img
+                    className="marketplace-offer-card__media"
+                    src={primaryImage.public_url}
+                    alt={offer.title}
+                  />
                 ) : (
-                  <span className="marketplace-offer-card__hint">
-                    Browse only. Buying is available for customer accounts.
-                  </span>
+                  <div className="marketplace-offer-card__media marketplace-offer-card__media--placeholder">
+                    No image
+                  </div>
                 )}
-              </div>
-            </article>
-          ))}
+
+                <div className="marketplace-offer-card__head">
+                  <span className="section-eyebrow">{activeCategory.title}</span>
+                  <strong>${offer.price_usd.toFixed(2)}</strong>
+                </div>
+
+                <h3>{offer.title}</h3>
+                <p>{offer.description}</p>
+
+                <div className="marketplace-offer-card__meta">
+                  <span>{offer.delivery_time}</span>
+                  <span>Stock: {offer.stock_count}</span>
+                </div>
+
+                <div className="hero-actions">
+                  {viewerId === offer.seller_id ? (
+                    <Link className="ghost-button" href={`/sell/offers/${offer.id}/edit`}>
+                      Manage Offer
+                    </Link>
+                  ) : viewerRole === "customer" ? (
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={() => handleBuy(offer)}
+                      disabled={buyingId === offer.id}
+                    >
+                      {buyingId === offer.id ? "Placing Order..." : "Buy Now"}
+                    </button>
+                  ) : (
+                    <span className="marketplace-offer-card__hint">
+                      Browse only. Buying is available for customer accounts.
+                    </span>
+                  )}
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
     </div>
