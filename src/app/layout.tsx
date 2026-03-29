@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import "../../styles/playnix-theme.css";
 import "./globals.css";
 
+import { AppVersionGuard } from "@/components/layout/app-version-guard";
 import { GlobalRouteLoader } from "@/components/layout/global-route-loader";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <AppVersionGuard />
         <div className="background-frame" />
         <Suspense fallback={null}>
           <GlobalRouteLoader />
