@@ -725,11 +725,16 @@ textarea {
 
 .game-showcase-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   min-height: 280px;
   padding: 24px;
   border: 1px solid rgba(35, 48, 64, 0.92);
   border-radius: 28px;
   overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   background:
     linear-gradient(180deg, rgba(3, 5, 10, 0.2) 0%, rgba(3, 5, 10, 0.88) 100%),
     radial-gradient(circle at top right, rgba(var(--playnix-accent-rgb), 0.28), transparent 34%),
@@ -747,6 +752,10 @@ textarea {
   height: 220px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(var(--playnix-accent-rgb), 0.22), transparent 64%);
+}
+
+.game-showcase-card > * {
+  pointer-events: none;
 }
 
 .game-showcase-card h3 {
@@ -1624,12 +1633,19 @@ textarea {
 }
 
 .marketplace-hub-card {
+  position: relative;
   padding: 22px;
   display: grid;
   gap: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   transition:
     transform 180ms ease,
     border-color 180ms ease;
+}
+
+.marketplace-hub-card > * {
+  pointer-events: none;
 }
 
 .marketplace-hub-card:hover,

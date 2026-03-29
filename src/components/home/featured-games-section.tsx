@@ -1,9 +1,19 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 
 import { SectionHeading } from "@/components/shared/section-heading";
 import { featuredGames } from "@/lib/homepage-data";
+import { triggerPageLoader } from "@/lib/page-loader-events";
 
 export function FeaturedGamesSection() {
+  const router = useRouter();
+
+  function openGameMarket(slug: string) {
+    triggerPageLoader();
+    router.push(`/marketplace/${slug}`);
+  }
+
   return (
     <section className="section-block section-block--tight">
       <div className="shell">
@@ -15,10 +25,19 @@ export function FeaturedGamesSection() {
 
         <div className="featured-games-grid">
           {featuredGames.map((game, index) => (
-            <Link
+            <article
               key={game.title}
-              href={`/marketplace/${game.slug}`}
               className={`game-showcase-card game-showcase-card--${index + 1}`}
+              role="link"
+              tabIndex={0}
+              aria-label={`Open ${game.title} marketplace`}
+              onClick={() => openGameMarket(game.slug)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openGameMarket(game.slug);
+                }
+              }}
             >
               <span className="section-eyebrow">{game.eyebrow}</span>
               <h3>{game.title}</h3>
@@ -28,7 +47,7 @@ export function FeaturedGamesSection() {
                   <span key={metric}>{metric}</span>
                 ))}
               </div>
-            </Link>
+            </article>
           ))}
         </div>
       </div>
