@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { siteNavigation } from "@/lib/homepage-data";
 import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
+import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
@@ -108,6 +109,7 @@ export function SiteHeader() {
       }
       setUser(null);
       setUserRole(null);
+      triggerPageLoader();
       router.replace("/auth/login");
       router.refresh();
       if (typeof window !== "undefined") {

@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { PageLoader } from "@/components/shared/page-loader";
 import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
+import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 
 type AuthGuardProps = {
@@ -49,6 +51,7 @@ export function AuthGuard({
         if (!allowedByRole) {
           setIsAllowed(false);
           setIsChecking(false);
+          triggerPageLoader();
           router.replace(unauthorizedRedirectTo);
           return;
         }
@@ -60,6 +63,7 @@ export function AuthGuard({
 
       setIsAllowed(false);
       setIsChecking(false);
+      triggerPageLoader();
       router.replace("/auth/login");
     }
 
@@ -76,6 +80,7 @@ export function AuthGuard({
         if (!allowedByRole) {
           setIsAllowed(false);
           setIsChecking(false);
+          triggerPageLoader();
           router.replace(unauthorizedRedirectTo);
           return;
         }
@@ -86,6 +91,7 @@ export function AuthGuard({
       }
 
       setIsAllowed(false);
+      triggerPageLoader();
       router.replace("/auth/login");
     });
 
@@ -97,14 +103,10 @@ export function AuthGuard({
 
   if (isChecking || !isAllowed) {
     return (
-      <main className="auth-page">
-        <div className="shell">
-          <section className="auth-card">
-            <h1>Checking your session...</h1>
-            <p>Please wait while we verify your account access.</p>
-          </section>
-        </div>
-      </main>
+      <PageLoader
+        label="Checking your session..."
+        hint="Please wait while BEN10 verifies your access."
+      />
     );
   }
 

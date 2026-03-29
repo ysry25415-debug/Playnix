@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
+import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 
 export default function LoginPage() {
@@ -63,6 +64,7 @@ export default function LoginPage() {
       return;
     }
 
+    triggerPageLoader();
     router.push("/");
   }
 

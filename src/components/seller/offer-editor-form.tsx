@@ -13,6 +13,7 @@ import {
 } from "@/lib/offer-images";
 import { getMarketplaceGame, marketplaceGames } from "@/lib/marketplace-data";
 import { type OfferImageRow, type OfferRow, type OfferStatus } from "@/lib/marketplace-types";
+import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 
 type OfferEditorFormProps = {
@@ -497,6 +498,7 @@ export function OfferEditorForm({
 
       if (mode === "create") {
         setPendingImages([]);
+        triggerPageLoader();
         router.push("/sell/offers");
         router.refresh();
         return;
