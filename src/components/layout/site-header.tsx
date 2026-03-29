@@ -1,22 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { type User } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 
 import { siteNavigation } from "@/lib/homepage-data";
 import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
-import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 
 export function SiteHeader() {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -92,32 +88,6 @@ export function SiteHeader() {
     };
   }, []);
 
-  async function handleLogout() {
-    setIsLoggingOut(true);
-    try {
-      await Promise.race([
-        supabase.auth.signOut({ scope: "global" }),
-        new Promise((resolve) => setTimeout(resolve, 2000)),
-      ]);
-    } finally {
-      if (typeof window !== "undefined") {
-        Object.keys(window.localStorage).forEach((key) => {
-          if (key.startsWith("sb-") || key.startsWith("playnix-role-cache:")) {
-            window.localStorage.removeItem(key);
-          }
-        });
-      }
-      setUser(null);
-      setUserRole(null);
-      triggerPageLoader();
-      router.replace("/auth/login");
-      router.refresh();
-      if (typeof window !== "undefined") {
-        window.location.assign("/auth/login");
-      }
-    }
-  }
-
   const roleLabel =
     userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : userRole === "customer" ? "Customer" : "Loading role...";
 
@@ -171,9 +141,6 @@ export function SiteHeader() {
                 Admin Review
               </Link>
             ) : null}
-            <button className="ghost-button" type="button" onClick={handleLogout}>
-              {isLoggingOut ? "Logging out..." : "Log Out"}
-            </button>
           </div>
         ) : (
           <div className="site-actions">

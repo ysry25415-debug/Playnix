@@ -2,11 +2,13 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type User } from "@supabase/supabase-js";
 
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
+import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 
 const MAX_AVATAR_UPLOAD_MB = 5;
@@ -69,6 +71,7 @@ async function buildOptimizedAvatarDataUrl(file: File): Promise<string> {
 }
 
 export default function AccountPage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -77,6 +80,7 @@ export default function AccountPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessingAvatar, setIsProcessingAvatar] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [role, setRole] = useState<AppRole | null>(null);
   const roleLabel =
     role === "admin" ? "Admin" : role === "seller" ? "Seller" : role === "customer" ? "Customer" : "Loading...";
@@ -209,6 +213,35 @@ export default function AccountPage() {
     setSuccess("Profile updated successfully.");
   }
 
+  async function handleLogout() {
+    setIsLoggingOut(true);
+
+    try {
+      await Promise.race([
+        supabase.auth.signOut({ scope: "global" }),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
+    } finally {
+      if (typeof window !== "undefined") {
+        Object.keys(window.localStorage).forEach((key) => {
+          if (key.startsWith("sb-") || key.startsWith("playnix-role-cache:")) {
+            window.localStorage.removeItem(key);
+          }
+        });
+      }
+
+      setUser(null);
+      setRole(null);
+      triggerPageLoader();
+      router.replace("/auth/login");
+      router.refresh();
+
+      if (typeof window !== "undefined") {
+        window.location.assign("/auth/login");
+      }
+    }
+  }
+
   return (
     <AuthGuard>
       <main className="auth-page">
@@ -278,6 +311,21 @@ export default function AccountPage() {
                   {isSaving ? "Saving..." : isProcessingAvatar ? "Processing image..." : "Save changes"}
                 </button>
               </form>
+
+              <div className="account-session-card">
+                <strong>Account session</strong>
+                <span>
+                  If you want to leave this device or switch accounts, sign out from here.
+                </span>
+                <button
+                  className="ghost-button account-logout-button"
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
+                  {isLoggingOut ? "Logging out..." : "Log Out"}
+                </button>
+              </div>
 
               <p className="auth-switch">
                 {role === "customer" ? (

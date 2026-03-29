@@ -1078,6 +1078,32 @@ select {
   color: var(--playnix-text-muted);
 }
 
+.account-session-card {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.2);
+  background: rgba(8, 16, 8, 0.72);
+  display: grid;
+  gap: 8px;
+}
+
+.account-session-card strong {
+  font-size: 1rem;
+}
+
+.account-session-card span {
+  color: var(--playnix-text-secondary);
+  line-height: 1.7;
+}
+
+.account-logout-button {
+  width: 100%;
+  margin-top: 4px;
+  border-color: rgba(255, 95, 95, 0.42);
+  background: rgba(45, 14, 14, 0.72);
+  color: #ffd6d6;
+}
+
 .seller-apply-card,
 .admin-review-card {
   max-width: 820px;
