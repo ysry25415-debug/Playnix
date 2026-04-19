@@ -138,29 +138,6 @@ export function GameMarketplaceView({
       return;
     }
 
-    const nextStock =
-      typeof payload?.nextStock === "number" ? payload.nextStock : Math.max(offer.stock_count - 1, 0);
-    const nextStatus =
-      payload?.nextStatus === "active" || payload?.nextStatus === "sold_out"
-        ? payload.nextStatus
-        : nextStock === 0
-          ? "sold_out"
-          : offer.status;
-
-    setOffers((current) =>
-      current
-        .map((item) =>
-          item.id === offer.id
-            ? {
-                ...item,
-                stock_count: nextStock,
-                status: nextStatus,
-              }
-            : item
-        )
-        .filter((item) => item.stock_count > 0)
-    );
-
     const nextOrderId = typeof payload?.orderId === "string" ? payload.orderId : null;
 
     if (nextOrderId) {

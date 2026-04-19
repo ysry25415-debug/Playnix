@@ -86,8 +86,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const nextStock = Math.max(offer.stock_count - 1, 0);
-  const nextStatus = nextStock === 0 ? "sold_out" : offer.status;
   const nextOrderId = crypto.randomUUID();
 
   const { error: orderError } = await adminClient.from("orders").insert({
@@ -122,23 +120,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: deliveryDetailsError.message }, { status: 400 });
   }
 
-  const { error: stockError } = await adminClient
-    .from("offers")
-    .update({
-      stock_count: nextStock,
-      status: nextStatus,
-    })
-    .eq("id", offer.id);
-
-  if (stockError) {
-    return NextResponse.json({ error: stockError.message }, { status: 400 });
-  }
-
   return NextResponse.json({
     ok: true,
     orderId: nextOrderId,
     deliveryMode: offer.delivery_mode,
-    nextStock,
-    nextStatus,
   });
 }
