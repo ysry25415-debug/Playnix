@@ -1,5 +1,6 @@
 import { type SupabaseClient } from "@supabase/supabase-js";
 
+import { normalizeOrderRow } from "@/lib/marketplace-compat";
 import { type OrderRow, type OrderTradeRoomRow } from "@/lib/marketplace-types";
 
 export async function loadOrderRoomContext(
@@ -14,9 +15,7 @@ export async function loadOrderRoomContext(
     await Promise.all([
       adminClient
         .from("orders")
-        .select(
-          "id,offer_id,buyer_id,seller_id,game_slug,category_slug,offer_title,price_usd,delivery_mode,status,created_at"
-        )
+        .select("*")
         .eq("id", orderId)
         .maybeSingle(),
       adminClient
@@ -36,14 +35,14 @@ export async function loadOrderRoomContext(
 
   if (roomError || !roomData) {
     return {
-      order: orderData as OrderRow,
+      order: normalizeOrderRow(orderData as Record<string, unknown>),
       room: null,
       error: roomError?.message ?? "Order room not found.",
     };
   }
 
   return {
-    order: orderData as OrderRow,
+    order: normalizeOrderRow(orderData as Record<string, unknown>),
     room: roomData as OrderTradeRoomRow,
     error: null,
   };

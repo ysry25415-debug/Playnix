@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import {
+  getSchemaCompatibilityMessage,
+  isLikelySchemaCompatibilityError,
+  normalizeOfferRow,
+} from "@/lib/marketplace-compat";
 import { createUserNotification, requireApiUser } from "@/lib/server-auth";
+
+function toApiError(message: string, subject: string) {
+  return isLikelySchemaCompatibilityError(message)
+    ? getSchemaCompatibilityMessage(subject)
+    : message;
+}
 
 export async function POST(request: NextRequest) {
   const auth = await requireApiUser(request);
@@ -18,34 +29,42 @@ export async function POST(request: NextRequest) {
 
   const { data: offer, error: offerError } = await adminClient
     .from("offers")
-    .select("id,seller_id,game_slug,category_slug,title,price_usd,delivery_mode,stock_count,status")
+    .select("*")
     .eq("id", offerId)
     .maybeSingle();
 
   if (offerError || !offer) {
-    return NextResponse.json({ error: "Offer not found." }, { status: 404 });
+    return NextResponse.json(
+      { error: offerError ? toApiError(offerError.message, "Order placement") : "Offer not found." },
+      { status: 404 }
+    );
   }
 
-  if (offer.seller_id === user.id) {
+  const normalizedOffer = normalizeOfferRow(offer as Record<string, unknown>);
+
+  if (normalizedOffer.seller_id === user.id) {
     return NextResponse.json({ error: "You cannot buy your own offer." }, { status: 409 });
   }
 
-  if (offer.status !== "active" || offer.stock_count < 1) {
+  if (normalizedOffer.status !== "active" || normalizedOffer.stock_count < 1) {
     return NextResponse.json({ error: "This offer is no longer available." }, { status: 409 });
   }
 
   let instantDeliveryContent: string | null = null;
 
-  if (offer.delivery_mode === "instant") {
+  if (normalizedOffer.delivery_mode === "instant") {
     const { data: privateDelivery, error: privateDeliveryError } = await adminClient
       .from("offer_private_deliveries")
       .select("delivery_content")
-      .eq("offer_id", offer.id)
-      .eq("seller_id", offer.seller_id)
+      .eq("offer_id", normalizedOffer.id)
+      .eq("seller_id", normalizedOffer.seller_id)
       .maybeSingle();
 
     if (privateDeliveryError) {
-      return NextResponse.json({ error: privateDeliveryError.message }, { status: 400 });
+      return NextResponse.json(
+        { error: toApiError(privateDeliveryError.message, "Instant delivery setup") },
+        { status: 400 }
+      );
     }
 
     instantDeliveryContent = privateDelivery?.delivery_content?.trim() ?? null;
@@ -62,40 +81,46 @@ export async function POST(request: NextRequest) {
 
   const { error: orderError } = await adminClient.from("orders").insert({
     id: nextOrderId,
-    offer_id: offer.id,
+    offer_id: normalizedOffer.id,
     buyer_id: user.id,
-    seller_id: offer.seller_id,
-    game_slug: offer.game_slug,
-    category_slug: offer.category_slug,
-    offer_title: offer.title,
-    price_usd: offer.price_usd,
-    delivery_mode: offer.delivery_mode,
+    seller_id: normalizedOffer.seller_id,
+    game_slug: normalizedOffer.game_slug,
+    category_slug: normalizedOffer.category_slug,
+    offer_title: normalizedOffer.title,
+    price_usd: normalizedOffer.price_usd,
+    delivery_mode: normalizedOffer.delivery_mode,
     status: "pending",
   });
 
   if (orderError) {
-    return NextResponse.json({ error: orderError.message }, { status: 400 });
+    return NextResponse.json(
+      { error: toApiError(orderError.message, "Order placement") },
+      { status: 400 }
+    );
   }
 
   const { error: deliveryDetailsError } = await adminClient.from("order_delivery_details").insert({
     order_id: nextOrderId,
-    offer_id: offer.id,
-    seller_id: offer.seller_id,
+    offer_id: normalizedOffer.id,
+    seller_id: normalizedOffer.seller_id,
     buyer_id: user.id,
-    delivery_mode: offer.delivery_mode,
+    delivery_mode: normalizedOffer.delivery_mode,
     delivery_content: instantDeliveryContent,
     unlocked_at: null,
   });
 
   if (deliveryDetailsError) {
     await adminClient.from("orders").delete().eq("id", nextOrderId);
-    return NextResponse.json({ error: deliveryDetailsError.message }, { status: 400 });
+    return NextResponse.json(
+      { error: toApiError(deliveryDetailsError.message, "Order delivery details") },
+      { status: 400 }
+    );
   }
 
   const { error: roomError } = await adminClient.from("order_trade_rooms").insert({
     order_id: nextOrderId,
-    offer_id: offer.id,
-    seller_id: offer.seller_id,
+    offer_id: normalizedOffer.id,
+    seller_id: normalizedOffer.seller_id,
     buyer_id: user.id,
     delivery_window_minutes: 60,
     room_status: "awaiting_seller",
@@ -106,7 +131,10 @@ export async function POST(request: NextRequest) {
   if (roomError) {
     await adminClient.from("order_delivery_details").delete().eq("order_id", nextOrderId);
     await adminClient.from("orders").delete().eq("id", nextOrderId);
-    return NextResponse.json({ error: roomError.message }, { status: 400 });
+    return NextResponse.json(
+      { error: toApiError(roomError.message, "Order room setup") },
+      { status: 400 }
+    );
   }
 
   const { error: messageError } = await adminClient.from("order_messages").insert({
@@ -120,11 +148,14 @@ export async function POST(request: NextRequest) {
     await adminClient.from("order_trade_rooms").delete().eq("order_id", nextOrderId);
     await adminClient.from("order_delivery_details").delete().eq("order_id", nextOrderId);
     await adminClient.from("orders").delete().eq("id", nextOrderId);
-    return NextResponse.json({ error: messageError.message }, { status: 400 });
+    return NextResponse.json(
+      { error: toApiError(messageError.message, "Order messages") },
+      { status: 400 }
+    );
   }
 
   await createUserNotification(adminClient, {
-    recipientId: offer.seller_id,
+    recipientId: normalizedOffer.seller_id,
     actorId: user.id,
     orderId: nextOrderId,
     title: "New order waiting",
@@ -135,6 +166,6 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     orderId: nextOrderId,
-    deliveryMode: offer.delivery_mode,
+    deliveryMode: normalizedOffer.delivery_mode,
   });
 }

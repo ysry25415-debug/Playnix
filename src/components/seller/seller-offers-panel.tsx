@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
+import {
+  attachImagesToOffers,
+  getSchemaCompatibilityMessage,
+  isLikelySchemaCompatibilityError,
+  normalizeOfferImageRow,
+  normalizeOfferRow,
+} from "@/lib/marketplace-compat";
 import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import { getPrimaryOfferImage, OFFER_IMAGES_BUCKET } from "@/lib/offer-images";
 import { getMarketplaceGame } from "@/lib/marketplace-data";
@@ -43,9 +50,7 @@ export function SellerOffersPanel() {
 
       const offersQuery = supabase
         .from("offers")
-        .select(
-          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_mode,delivery_time,stock_count,status,created_at,updated_at,offer_images(id,offer_id,seller_id,storage_path,public_url,is_primary,sort_order,created_at)"
-        )
+        .select("*")
         .order("created_at", { ascending: false });
 
       const { data, error: offersError } =
@@ -54,13 +59,48 @@ export function SellerOffersPanel() {
       if (!isMounted) return;
 
       if (offersError) {
-        setError(offersError.message);
+        setError(
+          isLikelySchemaCompatibilityError(offersError.message)
+            ? getSchemaCompatibilityMessage("Seller offers")
+            : offersError.message
+        );
         setOffers([]);
         setIsLoading(false);
         return;
       }
 
-      setOffers((data ?? []) as OfferWithImagesRow[]);
+      const normalizedOffers = (data ?? [])
+        .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+        .map((item) => normalizeOfferRow(item));
+
+      const offerIds = normalizedOffers.map((offer) => offer.id).filter(Boolean);
+
+      if (offerIds.length === 0) {
+        setOffers([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: imagesData, error: imagesError } = await supabase
+        .from("offer_images")
+        .select("*")
+        .in("offer_id", offerIds)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (!isMounted) return;
+
+      if (imagesError) {
+        setOffers(normalizedOffers.map((offer) => ({ ...offer, offer_images: [] } satisfies OfferWithImagesRow)));
+        setIsLoading(false);
+        return;
+      }
+
+      const normalizedImages = (imagesData ?? [])
+        .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+        .map((item) => normalizeOfferImageRow(item));
+
+      setOffers(attachImagesToOffers(normalizedOffers, normalizedImages));
       setIsLoading(false);
     }
 

@@ -4,6 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
+import {
+  getSchemaCompatibilityMessage,
+  isLikelySchemaCompatibilityError,
+  normalizeOrderRow,
+} from "@/lib/marketplace-compat";
 import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import { supabase } from "@/lib/supabase-client";
 import { type OrderRow } from "@/lib/marketplace-types";
@@ -40,9 +45,7 @@ export function SellerOrdersPanel() {
 
       const ordersQuery = supabase
         .from("orders")
-        .select(
-          "id,offer_id,buyer_id,seller_id,game_slug,category_slug,offer_title,price_usd,delivery_mode,status,created_at"
-        )
+        .select("*")
         .order("created_at", { ascending: false });
 
       const { data, error: ordersError } =
@@ -51,13 +54,21 @@ export function SellerOrdersPanel() {
       if (!isMounted) return;
 
       if (ordersError) {
-        setError(ordersError.message);
+        setError(
+          isLikelySchemaCompatibilityError(ordersError.message)
+            ? getSchemaCompatibilityMessage("Marketplace orders")
+            : ordersError.message
+        );
         setOrders([]);
         setIsLoading(false);
         return;
       }
 
-      setOrders((data ?? []) as OrderRow[]);
+      setOrders(
+        (data ?? [])
+          .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+          .map((item) => normalizeOrderRow(item))
+      );
       setIsLoading(false);
     }
 

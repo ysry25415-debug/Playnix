@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
+import {
+  getSchemaCompatibilityMessage,
+  isLikelySchemaCompatibilityError,
+  normalizeOrderRow,
+} from "@/lib/marketplace-compat";
 import { PageLoader } from "@/components/shared/page-loader";
 import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import {
@@ -101,9 +106,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
       const [orderResult, roomResult, deliveryResult, messagesResult] = await Promise.all([
         supabase
           .from("orders")
-          .select(
-            "id,offer_id,buyer_id,seller_id,game_slug,category_slug,offer_title,price_usd,delivery_mode,status,created_at"
-          )
+          .select("*")
           .eq("id", orderId)
           .maybeSingle(),
         supabase
@@ -133,7 +136,11 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
         (!orderResult.data ? "Order not found or access denied." : "");
 
       if (nextError) {
-        setError(nextError);
+        setError(
+          isLikelySchemaCompatibilityError(nextError)
+            ? getSchemaCompatibilityMessage("Order room")
+            : nextError
+        );
         setOrder(null);
         setRoom(null);
         setDeliveryDetails(null);
@@ -143,7 +150,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
         return;
       }
 
-      const typedOrder = orderResult.data as OrderRow;
+      const typedOrder = normalizeOrderRow(orderResult.data as Record<string, unknown>);
       const typedRoom = roomResult.data as OrderTradeRoomRow | null;
       const typedDelivery = (deliveryResult.data ?? null) as OrderDeliveryDetailsRow | null;
       const typedMessages = (messagesResult.data ?? []) as OrderMessageRow[];
@@ -280,9 +287,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
     const [orderResult, roomResult, deliveryResult, messagesResult] = await Promise.all([
       supabase
         .from("orders")
-        .select(
-          "id,offer_id,buyer_id,seller_id,game_slug,category_slug,offer_title,price_usd,delivery_mode,status,created_at"
-        )
+        .select("*")
         .eq("id", orderId)
         .maybeSingle(),
       supabase
@@ -302,7 +307,9 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
         .order("created_at", { ascending: true }),
     ]);
 
-    if (orderResult.data) setOrder(orderResult.data as OrderRow);
+    if (orderResult.data) {
+      setOrder(normalizeOrderRow(orderResult.data as Record<string, unknown>));
+    }
     if (roomResult.data) setRoom(roomResult.data as OrderTradeRoomRow);
     setDeliveryDetails((deliveryResult.data ?? null) as OrderDeliveryDetailsRow | null);
     setMessages((messagesResult.data ?? []) as OrderMessageRow[]);
