@@ -1,40 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
-function getAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    return null;
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-}
+import { createUserNotification, requireApiUser } from "@/lib/server-auth";
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  const adminClient = getAdminClient();
-
-  if (!adminClient) {
-    return NextResponse.json({ error: "Missing server env keys." }, { status: 500 });
+  const auth = await requireApiUser(request);
+  if ("error" in auth) {
+    return auth.error;
   }
 
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
-
-  const { data: userData, error: userError } = await adminClient.auth.getUser(token);
-  if (userError || !userData.user) {
-    return NextResponse.json({ error: "Invalid session." }, { status: 401 });
-  }
-
+  const { adminClient, user } = auth;
   const body = await request.json().catch(() => null);
   const offerId = typeof body?.offerId === "string" ? body.offerId : "";
 
@@ -44,9 +18,7 @@ export async function POST(request: NextRequest) {
 
   const { data: offer, error: offerError } = await adminClient
     .from("offers")
-    .select(
-      "id,seller_id,game_slug,category_slug,title,price_usd,delivery_mode,stock_count,status"
-    )
+    .select("id,seller_id,game_slug,category_slug,title,price_usd,delivery_mode,stock_count,status")
     .eq("id", offerId)
     .maybeSingle();
 
@@ -54,7 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Offer not found." }, { status: 404 });
   }
 
-  if (offer.seller_id === userData.user.id) {
+  if (offer.seller_id === user.id) {
     return NextResponse.json({ error: "You cannot buy your own offer." }, { status: 409 });
   }
 
@@ -91,7 +63,7 @@ export async function POST(request: NextRequest) {
   const { error: orderError } = await adminClient.from("orders").insert({
     id: nextOrderId,
     offer_id: offer.id,
-    buyer_id: userData.user.id,
+    buyer_id: user.id,
     seller_id: offer.seller_id,
     game_slug: offer.game_slug,
     category_slug: offer.category_slug,
@@ -109,16 +81,56 @@ export async function POST(request: NextRequest) {
     order_id: nextOrderId,
     offer_id: offer.id,
     seller_id: offer.seller_id,
-    buyer_id: userData.user.id,
+    buyer_id: user.id,
     delivery_mode: offer.delivery_mode,
     delivery_content: instantDeliveryContent,
-    unlocked_at: offer.delivery_mode === "instant" ? new Date().toISOString() : null,
+    unlocked_at: null,
   });
 
   if (deliveryDetailsError) {
     await adminClient.from("orders").delete().eq("id", nextOrderId);
     return NextResponse.json({ error: deliveryDetailsError.message }, { status: 400 });
   }
+
+  const { error: roomError } = await adminClient.from("order_trade_rooms").insert({
+    order_id: nextOrderId,
+    offer_id: offer.id,
+    seller_id: offer.seller_id,
+    buyer_id: user.id,
+    delivery_window_minutes: 60,
+    room_status: "awaiting_seller",
+    payment_status: "unpaid",
+    resolution_status: "none",
+  });
+
+  if (roomError) {
+    await adminClient.from("order_delivery_details").delete().eq("order_id", nextOrderId);
+    await adminClient.from("orders").delete().eq("id", nextOrderId);
+    return NextResponse.json({ error: roomError.message }, { status: 400 });
+  }
+
+  const { error: messageError } = await adminClient.from("order_messages").insert({
+    order_id: nextOrderId,
+    sender_id: null,
+    message: "Order created. Waiting for the seller to open the delivery room.",
+    is_system: true,
+  });
+
+  if (messageError) {
+    await adminClient.from("order_trade_rooms").delete().eq("order_id", nextOrderId);
+    await adminClient.from("order_delivery_details").delete().eq("order_id", nextOrderId);
+    await adminClient.from("orders").delete().eq("id", nextOrderId);
+    return NextResponse.json({ error: messageError.message }, { status: 400 });
+  }
+
+  await createUserNotification(adminClient, {
+    recipientId: offer.seller_id,
+    actorId: user.id,
+    orderId: nextOrderId,
+    title: "New order waiting",
+    body: "A buyer created a new order. Open it and start the delivery room when you are ready.",
+    actionHref: `/orders/${nextOrderId}`,
+  });
 
   return NextResponse.json({
     ok: true,

@@ -328,6 +328,8 @@ export default function AccountPage() {
               </div>
 
               <p className="auth-switch">
+                Open <Link href="/notifications">Notifications</Link>.
+                <br />
                 {role === "customer" ? (
                   <>
                     Want to sell? <Link href="/seller/apply">Join sellers</Link>.
@@ -336,7 +338,8 @@ export default function AccountPage() {
                 ) : null}
                 {role === "admin" ? (
                   <>
-                    Open <Link href="/admin/verification">Admin review</Link>.
+                    Open <Link href="/admin/verification">Admin review</Link> or{" "}
+                    <Link href="/admin/disputes">Disputes</Link>.
                     <br />
                   </>
                 ) : null}

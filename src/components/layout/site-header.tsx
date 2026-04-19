@@ -13,6 +13,7 @@ import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 export function SiteHeader() {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -52,6 +53,17 @@ export function SiteHeader() {
       setUserRole(role);
     }
 
+    async function loadUnreadNotificationsCount(userId: string) {
+      const { count } = await supabase
+        .from("user_notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", userId)
+        .eq("is_read", false);
+
+      if (!isMounted) return;
+      setUnreadNotifications(count ?? 0);
+    }
+
     async function loadUser() {
       const { data } = await supabase.auth.getSession();
       if (isMounted) {
@@ -60,8 +72,10 @@ export function SiteHeader() {
         if (currentUser) {
           setUserRole(getOptimisticRole(currentUser));
           void loadRole();
+          void loadUnreadNotificationsCount(currentUser.id);
         } else {
           setUserRole(null);
+          setUnreadNotifications(0);
         }
       }
     }
@@ -76,17 +90,26 @@ export function SiteHeader() {
         if (sessionUser) {
           setUserRole(getOptimisticRole(sessionUser));
           void loadRole();
+          void loadUnreadNotificationsCount(sessionUser.id);
         } else {
           setUserRole(null);
+          setUnreadNotifications(0);
         }
       }
     });
 
+    const interval = window.setInterval(() => {
+      if (user?.id) {
+        void loadUnreadNotificationsCount(user.id);
+      }
+    }, 15000);
+
     return () => {
       isMounted = false;
+      window.clearInterval(interval);
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [user?.id]);
 
   const roleLabel =
     userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : userRole === "customer" ? "Customer" : "Loading role...";
@@ -131,15 +154,26 @@ export function SiteHeader() {
                 Join Sellers
               </Link>
             ) : null}
+            <Link className="ghost-button notification-button" href="/notifications">
+              Notifications
+              {unreadNotifications > 0 ? (
+                <span className="notification-badge">{unreadNotifications}</span>
+              ) : null}
+            </Link>
             {userRole === "seller" ? (
               <Link className="ghost-button" href="/sell">
                 Seller Center
               </Link>
             ) : null}
             {userRole === "admin" ? (
-              <Link className="ghost-button" href="/admin/verification">
-                Admin Review
-              </Link>
+              <>
+                <Link className="ghost-button" href="/admin/verification">
+                  Admin Review
+                </Link>
+                <Link className="ghost-button" href="/admin/disputes">
+                  Disputes
+                </Link>
+              </>
             ) : null}
           </div>
         ) : (

@@ -331,6 +331,26 @@ textarea {
   color: var(--playnix-text-muted);
 }
 
+.notification-button {
+  position: relative;
+  gap: 10px;
+}
+
+.notification-badge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #efffe0, #96ff54);
+  color: #081006;
+  font-size: 0.75rem;
+  font-weight: 800;
+  box-shadow: 0 0 18px rgba(var(--playnix-accent-rgb), 0.26);
+}
+
 .primary-button,
 .ghost-button {
   display: inline-flex;
@@ -1931,6 +1951,182 @@ textarea {
   background: rgba(6, 12, 17, 0.72);
 }
 
+.order-room__banner,
+.order-room__setup,
+.order-room__chat,
+.order-room__actions,
+.notification-item {
+  padding: 18px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.18);
+  background: rgba(8, 14, 20, 0.72);
+  display: grid;
+  gap: 12px;
+}
+
+.order-room__banner {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.order-room__banner strong,
+.order-room__setup strong,
+.order-room__chat strong,
+.order-room__actions strong,
+.notification-item strong {
+  font-size: 0.98rem;
+}
+
+.order-room__banner span,
+.order-room__setup p,
+.notification-item p,
+.notification-item span {
+  margin: 0;
+  color: var(--playnix-text-secondary);
+  line-height: 1.7;
+}
+
+.order-room__celebration,
+.order-room__warning {
+  padding: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.order-room__celebration {
+  border: 1px solid rgba(154, 255, 117, 0.42);
+  background:
+    radial-gradient(circle at top right, rgba(154, 255, 117, 0.16), transparent 38%),
+    rgba(10, 28, 10, 0.88);
+  box-shadow: 0 0 30px rgba(154, 255, 117, 0.14);
+}
+
+.order-room__warning {
+  border: 1px solid rgba(255, 168, 96, 0.34);
+  background:
+    radial-gradient(circle at top right, rgba(255, 133, 46, 0.12), transparent 38%),
+    rgba(31, 19, 10, 0.88);
+  box-shadow: 0 0 26px rgba(255, 133, 46, 0.12);
+}
+
+.order-room__celebration strong,
+.order-room__warning strong {
+  font-size: 1rem;
+}
+
+.order-room__celebration span,
+.order-room__warning span {
+  color: var(--playnix-text-secondary);
+  line-height: 1.7;
+}
+
+.order-room__payment-form {
+  display: grid;
+  gap: 12px;
+}
+
+.order-room__chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.order-room__chat-head span {
+  color: var(--playnix-text-secondary);
+  font-size: 0.85rem;
+}
+
+.order-room__messages {
+  display: grid;
+  gap: 12px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.order-room__message,
+.order-room__empty {
+  padding: 14px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.14);
+  background: rgba(7, 12, 18, 0.78);
+  display: grid;
+  gap: 8px;
+}
+
+.order-room__message--self {
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.32);
+  background:
+    linear-gradient(180deg, rgba(var(--playnix-accent-rgb), 0.08), transparent 32%),
+    rgba(12, 24, 15, 0.82);
+}
+
+.order-room__message--system {
+  border-style: dashed;
+  background: rgba(10, 15, 22, 0.7);
+}
+
+.order-room__message-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.order-room__message-head span,
+.order-room__empty span {
+  color: var(--playnix-text-muted);
+  font-size: 0.82rem;
+}
+
+.order-room__message p,
+.order-room__empty strong {
+  margin: 0;
+}
+
+.order-room__composer {
+  display: grid;
+  gap: 12px;
+}
+
+.order-room__composer textarea {
+  min-height: 116px;
+}
+
+.order-room__actions {
+  grid-template-columns: repeat(3, minmax(0, max-content));
+  align-items: center;
+}
+
+.notification-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.notification-item {
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+}
+
+.notification-item--unread {
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.42);
+  background:
+    linear-gradient(180deg, rgba(var(--playnix-accent-rgb), 0.08), transparent 28%),
+    rgba(10, 18, 13, 0.82);
+}
+
+.notification-item__copy {
+  display: grid;
+  gap: 6px;
+}
+
+.notification-item__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .site-footer {
   padding: 24px 0 40px;
 }
@@ -2191,8 +2387,20 @@ textarea {
 
   .seller-offer-image-grid,
   .marketplace-offer-grid,
-  .marketplace-tabs {
+  .marketplace-tabs,
+  .notification-item,
+  .order-room__actions {
     grid-template-columns: 1fr;
+  }
+
+  .order-room__banner,
+  .order-room__chat-head {
+    justify-content: stretch;
+  }
+
+  .order-room__chat-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
