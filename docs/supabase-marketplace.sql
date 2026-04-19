@@ -118,6 +118,37 @@ create table if not exists public.order_trade_rooms (
   updated_at timestamptz not null default now()
 );
 
+alter table public.order_delivery_details
+add column if not exists offer_id uuid references public.offers(id) on delete cascade,
+add column if not exists seller_id uuid references auth.users(id) on delete cascade,
+add column if not exists buyer_id uuid references auth.users(id) on delete cascade,
+add column if not exists delivery_mode public.offer_delivery_mode,
+add column if not exists delivery_content text,
+add column if not exists created_at timestamptz not null default now(),
+add column if not exists unlocked_at timestamptz;
+
+alter table public.order_trade_rooms
+add column if not exists offer_id uuid references public.offers(id) on delete cascade,
+add column if not exists seller_id uuid references auth.users(id) on delete cascade,
+add column if not exists buyer_id uuid references auth.users(id) on delete cascade,
+add column if not exists delivery_window_minutes integer not null default 60 check (delivery_window_minutes between 5 and 10080),
+add column if not exists room_status public.order_room_status not null default 'awaiting_seller',
+add column if not exists payment_status public.order_payment_status not null default 'unpaid',
+add column if not exists resolution_status public.order_resolution_status not null default 'none',
+add column if not exists seller_started_at timestamptz,
+add column if not exists delivery_deadline timestamptz,
+add column if not exists buyer_paid_at timestamptz,
+add column if not exists buyer_card_last4 text,
+add column if not exists buyer_card_holder text,
+add column if not exists seller_marked_delivered_at timestamptz,
+add column if not exists buyer_confirmed_received_at timestamptz,
+add column if not exists buyer_disputed_at timestamptz,
+add column if not exists resolved_at timestamptz,
+add column if not exists resolved_by uuid references auth.users(id),
+add column if not exists resolution_note text,
+add column if not exists created_at timestamptz not null default now(),
+add column if not exists updated_at timestamptz not null default now();
+
 create table if not exists public.order_messages (
   id bigserial primary key,
   order_id uuid not null references public.orders(id) on delete cascade,

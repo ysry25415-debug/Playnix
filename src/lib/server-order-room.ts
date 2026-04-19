@@ -21,9 +21,7 @@ export async function loadOrderRoomContext(
         .maybeSingle(),
       adminClient
         .from("order_trade_rooms")
-        .select(
-          "order_id,offer_id,seller_id,buyer_id,delivery_window_minutes,room_status,payment_status,resolution_status,seller_started_at,delivery_deadline,buyer_paid_at,buyer_card_last4,buyer_card_holder,seller_marked_delivered_at,buyer_confirmed_received_at,buyer_disputed_at,resolved_at,resolved_by,resolution_note,created_at,updated_at"
-        )
+        .select("*")
         .eq("order_id", orderId)
         .maybeSingle(),
     ]);

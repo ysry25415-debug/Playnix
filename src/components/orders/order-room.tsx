@@ -50,7 +50,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
       const accessToken = sessionData.session?.access_token;
 
       if (!accessToken) {
-        return false;
+        return { ok: false, error: "Please log in again and retry." };
       }
 
       const response = await fetch("/api/orders/room/bootstrap", {
@@ -62,7 +62,16 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
         body: JSON.stringify({ orderId }),
       });
 
-      return response.ok;
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        return {
+          ok: false,
+          error: payload?.error ?? "Could not initialize this order room.",
+        };
+      }
+
+      return { ok: true, error: "" };
     }
 
     async function loadOrderRoom(silent = false) {
@@ -99,21 +108,17 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
           .maybeSingle(),
         supabase
           .from("order_trade_rooms")
-          .select(
-            "order_id,offer_id,seller_id,buyer_id,delivery_window_minutes,room_status,payment_status,resolution_status,seller_started_at,delivery_deadline,buyer_paid_at,buyer_card_last4,buyer_card_holder,seller_marked_delivered_at,buyer_confirmed_received_at,buyer_disputed_at,resolved_at,resolved_by,resolution_note,created_at,updated_at"
-          )
+          .select("*")
           .eq("order_id", orderId)
           .maybeSingle(),
         supabase
           .from("order_delivery_details")
-          .select(
-            "order_id,offer_id,seller_id,buyer_id,delivery_mode,delivery_content,created_at,unlocked_at"
-          )
+          .select("*")
           .eq("order_id", orderId)
           .maybeSingle(),
         supabase
           .from("order_messages")
-          .select("id,order_id,sender_id,message,is_system,created_at")
+          .select("*")
           .eq("order_id", orderId)
           .order("created_at", { ascending: true }),
       ]);
@@ -145,14 +150,16 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
 
       if (!typedRoom && !bootstrapTriedRef.current) {
         bootstrapTriedRef.current = true;
-        const bootstrapped = await bootstrapRoomIfMissing();
+        const bootstrapResult = await bootstrapRoomIfMissing();
 
         if (!isMounted) return;
 
-        if (bootstrapped) {
+        if (bootstrapResult.ok) {
           await loadOrderRoom(silent);
           return;
         }
+
+        setError(bootstrapResult.error);
       }
 
       setOrder(typedOrder);
@@ -280,21 +287,17 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
         .maybeSingle(),
       supabase
         .from("order_trade_rooms")
-        .select(
-          "order_id,offer_id,seller_id,buyer_id,delivery_window_minutes,room_status,payment_status,resolution_status,seller_started_at,delivery_deadline,buyer_paid_at,buyer_card_last4,buyer_card_holder,seller_marked_delivered_at,buyer_confirmed_received_at,buyer_disputed_at,resolved_at,resolved_by,resolution_note,created_at,updated_at"
-        )
+        .select("*")
         .eq("order_id", orderId)
         .maybeSingle(),
       supabase
         .from("order_delivery_details")
-        .select(
-          "order_id,offer_id,seller_id,buyer_id,delivery_mode,delivery_content,created_at,unlocked_at"
-        )
+        .select("*")
         .eq("order_id", orderId)
         .maybeSingle(),
       supabase
         .from("order_messages")
-        .select("id,order_id,sender_id,message,is_system,created_at")
+        .select("*")
         .eq("order_id", orderId)
         .order("created_at", { ascending: true }),
     ]);

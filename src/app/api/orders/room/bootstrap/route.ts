@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
   const { data: existingRoom, error: existingRoomError } = await adminClient
     .from("order_trade_rooms")
-    .select("order_id")
+    .select("*")
     .eq("order_id", orderId)
     .maybeSingle();
 
@@ -58,11 +58,31 @@ export async function POST(request: NextRequest) {
     if (insertRoomError) {
       return NextResponse.json({ error: insertRoomError.message }, { status: 400 });
     }
+  } else {
+    const roomNeedsSync =
+      existingRoom.offer_id !== order.offer_id ||
+      existingRoom.seller_id !== order.seller_id ||
+      existingRoom.buyer_id !== order.buyer_id;
+
+    if (roomNeedsSync) {
+      const { error: syncRoomError } = await adminClient
+        .from("order_trade_rooms")
+        .update({
+          offer_id: order.offer_id,
+          seller_id: order.seller_id,
+          buyer_id: order.buyer_id,
+        })
+        .eq("order_id", order.id);
+
+      if (syncRoomError) {
+        return NextResponse.json({ error: syncRoomError.message }, { status: 400 });
+      }
+    }
   }
 
   const { data: existingDelivery, error: existingDeliveryError } = await adminClient
     .from("order_delivery_details")
-    .select("order_id")
+    .select("*")
     .eq("order_id", orderId)
     .maybeSingle();
 
@@ -96,6 +116,28 @@ export async function POST(request: NextRequest) {
 
     if (insertDeliveryError) {
       return NextResponse.json({ error: insertDeliveryError.message }, { status: 400 });
+    }
+  } else {
+    const deliveryNeedsSync =
+      existingDelivery.offer_id !== order.offer_id ||
+      existingDelivery.seller_id !== order.seller_id ||
+      existingDelivery.buyer_id !== order.buyer_id ||
+      existingDelivery.delivery_mode !== order.delivery_mode;
+
+    if (deliveryNeedsSync) {
+      const { error: syncDeliveryError } = await adminClient
+        .from("order_delivery_details")
+        .update({
+          offer_id: order.offer_id,
+          seller_id: order.seller_id,
+          buyer_id: order.buyer_id,
+          delivery_mode: order.delivery_mode,
+        })
+        .eq("order_id", order.id);
+
+      if (syncDeliveryError) {
+        return NextResponse.json({ error: syncDeliveryError.message }, { status: 400 });
+      }
     }
   }
 
