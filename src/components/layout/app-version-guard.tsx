@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const APP_RUNTIME_VERSION = "2026-03-30-mobile-sync-1";
+const APP_RUNTIME_VERSION = "2026-04-19-order-room-refresh-1";
 const APP_VERSION_STORAGE_KEY = "playnix-app-runtime-version";
 const APP_VERSION_RELOAD_FLAG = "playnix-app-version-reloaded";
 
