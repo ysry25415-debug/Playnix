@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import { getPrimaryOfferImage } from "@/lib/offer-images";
 import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { type MarketplaceGame } from "@/lib/marketplace-data";
 import { type OfferWithImagesRow } from "@/lib/marketplace-types";
+import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 
 type GameMarketplaceViewProps = {
@@ -18,6 +21,7 @@ export function GameMarketplaceView({
   game,
   activeCategorySlug,
 }: GameMarketplaceViewProps) {
+  const router = useRouter();
   const [offers, setOffers] = useState<OfferWithImagesRow[]>([]);
   const [viewerRole, setViewerRole] = useState<AppRole | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
@@ -58,7 +62,7 @@ export function GameMarketplaceView({
       const { data, error: offersError } = await supabase
         .from("offers")
         .select(
-          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_time,stock_count,status,created_at,updated_at,offer_images(id,offer_id,seller_id,storage_path,public_url,is_primary,sort_order,created_at)"
+          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_mode,delivery_time,stock_count,status,created_at,updated_at,offer_images(id,offer_id,seller_id,storage_path,public_url,is_primary,sort_order,created_at)"
         )
         .eq("game_slug", game.slug)
         .eq("category_slug", activeCategory.slug)
@@ -156,7 +160,17 @@ export function GameMarketplaceView({
         )
         .filter((item) => item.stock_count > 0)
     );
-    setSuccess("Order placed successfully. The seller will now see it in Orders.");
+
+    const nextOrderId = typeof payload?.orderId === "string" ? payload.orderId : null;
+
+    if (nextOrderId) {
+      triggerPageLoader();
+      router.push(`/orders/${nextOrderId}`);
+      router.refresh();
+      return;
+    }
+
+    setSuccess("Order placed successfully.");
   }
 
   const canCreateOffers = viewerRole === "seller" || viewerRole === "admin";
@@ -243,6 +257,7 @@ export function GameMarketplaceView({
                 <p>{offer.description}</p>
 
                 <div className="marketplace-offer-card__meta">
+                  <span>{getOfferDeliveryModeLabel(offer.delivery_mode)}</span>
                   <span>{offer.delivery_time}</span>
                   <span>Stock: {offer.stock_count}</span>
                 </div>

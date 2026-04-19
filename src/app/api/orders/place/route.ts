@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   const { data: offer, error: offerError } = await adminClient
     .from("offers")
     .select(
-      "id,seller_id,game_slug,category_slug,title,price_usd,stock_count,status"
+      "id,seller_id,game_slug,category_slug,title,price_usd,delivery_mode,stock_count,status"
     )
     .eq("id", offerId)
     .maybeSingle();
@@ -62,10 +62,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "This offer is no longer available." }, { status: 409 });
   }
 
+  let instantDeliveryContent: string | null = null;
+
+  if (offer.delivery_mode === "instant") {
+    const { data: privateDelivery, error: privateDeliveryError } = await adminClient
+      .from("offer_private_deliveries")
+      .select("delivery_content")
+      .eq("offer_id", offer.id)
+      .eq("seller_id", offer.seller_id)
+      .maybeSingle();
+
+    if (privateDeliveryError) {
+      return NextResponse.json({ error: privateDeliveryError.message }, { status: 400 });
+    }
+
+    instantDeliveryContent = privateDelivery?.delivery_content?.trim() ?? null;
+
+    if (!instantDeliveryContent) {
+      return NextResponse.json(
+        { error: "This instant-delivery offer is missing its delivery details." },
+        { status: 409 }
+      );
+    }
+  }
+
   const nextStock = Math.max(offer.stock_count - 1, 0);
   const nextStatus = nextStock === 0 ? "sold_out" : offer.status;
+  const nextOrderId = crypto.randomUUID();
 
   const { error: orderError } = await adminClient.from("orders").insert({
+    id: nextOrderId,
     offer_id: offer.id,
     buyer_id: userData.user.id,
     seller_id: offer.seller_id,
@@ -73,11 +99,27 @@ export async function POST(request: NextRequest) {
     category_slug: offer.category_slug,
     offer_title: offer.title,
     price_usd: offer.price_usd,
+    delivery_mode: offer.delivery_mode,
     status: "pending",
   });
 
   if (orderError) {
     return NextResponse.json({ error: orderError.message }, { status: 400 });
+  }
+
+  const { error: deliveryDetailsError } = await adminClient.from("order_delivery_details").insert({
+    order_id: nextOrderId,
+    offer_id: offer.id,
+    seller_id: offer.seller_id,
+    buyer_id: userData.user.id,
+    delivery_mode: offer.delivery_mode,
+    delivery_content: instantDeliveryContent,
+    unlocked_at: offer.delivery_mode === "instant" ? new Date().toISOString() : null,
+  });
+
+  if (deliveryDetailsError) {
+    await adminClient.from("orders").delete().eq("id", nextOrderId);
+    return NextResponse.json({ error: deliveryDetailsError.message }, { status: 400 });
   }
 
   const { error: stockError } = await adminClient
@@ -94,6 +136,8 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     ok: true,
+    orderId: nextOrderId,
+    deliveryMode: offer.delivery_mode,
     nextStock,
     nextStatus,
   });

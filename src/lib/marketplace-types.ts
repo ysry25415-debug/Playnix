@@ -1,4 +1,5 @@
 export type OfferStatus = "draft" | "active" | "paused" | "sold_out";
+export type OfferDeliveryMode = "instant" | "chat";
 
 export type OfferRow = {
   id: string;
@@ -8,6 +9,7 @@ export type OfferRow = {
   title: string;
   description: string;
   price_usd: number;
+  delivery_mode: OfferDeliveryMode;
   delivery_time: string;
   stock_count: number;
   status: OfferStatus;
@@ -41,6 +43,26 @@ export type OrderRow = {
   category_slug: string;
   offer_title: string;
   price_usd: number;
+  delivery_mode: OfferDeliveryMode;
   status: OrderStatus;
   created_at: string;
+};
+
+export type OfferPrivateDeliveryRow = {
+  offer_id: string;
+  seller_id: string;
+  delivery_content: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type OrderDeliveryDetailsRow = {
+  order_id: string;
+  offer_id: string;
+  seller_id: string;
+  buyer_id: string;
+  delivery_mode: OfferDeliveryMode;
+  delivery_content: string | null;
+  created_at: string;
+  unlocked_at: string | null;
 };

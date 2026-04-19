@@ -11,8 +11,18 @@ import {
   OFFER_IMAGES_BUCKET,
   sanitizeOfferImageFileName,
 } from "@/lib/offer-images";
+import {
+  getOfferDeliveryModeDescription,
+  getOfferDeliveryModeLabel,
+  offerDeliveryModes,
+} from "@/lib/offer-delivery";
 import { getMarketplaceGame, marketplaceGames } from "@/lib/marketplace-data";
-import { type OfferImageRow, type OfferRow, type OfferStatus } from "@/lib/marketplace-types";
+import {
+  type OfferDeliveryMode,
+  type OfferImageRow,
+  type OfferRow,
+  type OfferStatus,
+} from "@/lib/marketplace-types";
 import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 
@@ -66,7 +76,9 @@ export function OfferEditorForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priceUsd, setPriceUsd] = useState("10");
-  const [deliveryTime, setDeliveryTime] = useState("Instant delivery");
+  const [deliveryMode, setDeliveryMode] = useState<OfferDeliveryMode>("chat");
+  const [deliveryTime, setDeliveryTime] = useState("Within 10 minutes");
+  const [instantDeliveryContent, setInstantDeliveryContent] = useState("");
   const [stockCount, setStockCount] = useState("1");
   const [status, setStatus] = useState<OfferStatus>("active");
   const [existingImages, setExistingImages] = useState<OfferImageRow[]>([]);
@@ -81,6 +93,8 @@ export function OfferEditorForm({
 
   const activeGame = useMemo(() => getMarketplaceGame(gameSlug) ?? marketplaceGames[0], [gameSlug]);
   const totalImageCount = existingImages.length + pendingImages.length;
+  const deliveryTimePlaceholder =
+    deliveryMode === "instant" ? "Example: Instant delivery" : "Example: Within 10 minutes";
 
   const imageCards = useMemo(() => {
     return [
@@ -137,7 +151,7 @@ export function OfferEditorForm({
       const { data, error: offerError } = await supabase
         .from("offers")
         .select(
-          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_time,stock_count,status,created_at,updated_at"
+          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_mode,delivery_time,stock_count,status,created_at,updated_at"
         )
         .eq("id", offerId)
         .eq("seller_id", user.id)
@@ -159,10 +173,23 @@ export function OfferEditorForm({
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
 
+      const { data: privateDeliveryData, error: privateDeliveryError } = await supabase
+        .from("offer_private_deliveries")
+        .select("delivery_content")
+        .eq("offer_id", offerId)
+        .eq("seller_id", user.id)
+        .maybeSingle();
+
       if (!isMounted) return;
 
       if (imagesError) {
         setError(imagesError.message);
+        setIsLoading(false);
+        return;
+      }
+
+      if (privateDeliveryError) {
+        setError(privateDeliveryError.message);
         setIsLoading(false);
         return;
       }
@@ -179,7 +206,9 @@ export function OfferEditorForm({
       setTitle(offer.title);
       setDescription(offer.description);
       setPriceUsd(String(offer.price_usd));
+      setDeliveryMode(offer.delivery_mode);
       setDeliveryTime(offer.delivery_time);
+      setInstantDeliveryContent(privateDeliveryData?.delivery_content ?? "");
       setStockCount(String(offer.stock_count));
       setStatus(offer.status);
       setExistingImages(offerImages);
@@ -308,6 +337,11 @@ export function OfferEditorForm({
       return;
     }
 
+    if (deliveryMode === "instant" && !instantDeliveryContent.trim()) {
+      setError("Please add the delivery details that unlock after purchase.");
+      return;
+    }
+
     if (totalImageCount === 0) {
       setError("Please upload at least one product image.");
       return;
@@ -338,7 +372,9 @@ export function OfferEditorForm({
       title: title.trim(),
       description: description.trim(),
       price_usd: parsedPrice,
-      delivery_time: deliveryTime.trim() || "Instant delivery",
+      delivery_mode: deliveryMode,
+      delivery_time:
+        deliveryTime.trim() || (deliveryMode === "instant" ? "Instant delivery" : "Within 10 minutes"),
       stock_count: parsedStock,
       status,
     };
@@ -369,6 +405,33 @@ export function OfferEditorForm({
 
         if (updateError) {
           throw new Error(updateError.message);
+        }
+      }
+
+      if (deliveryMode === "instant") {
+        const { error: deliverySaveError } = await supabase.from("offer_private_deliveries").upsert(
+          {
+            offer_id: nextOfferId,
+            seller_id: user.id,
+            delivery_content: instantDeliveryContent.trim(),
+          },
+          {
+            onConflict: "offer_id",
+          }
+        );
+
+        if (deliverySaveError) {
+          throw new Error(deliverySaveError.message);
+        }
+      } else {
+        const { error: deliveryDeleteError } = await supabase
+          .from("offer_private_deliveries")
+          .delete()
+          .eq("offer_id", nextOfferId)
+          .eq("seller_id", user.id);
+
+        if (deliveryDeleteError) {
+          throw new Error(deliveryDeleteError.message);
         }
       }
 
@@ -540,8 +603,8 @@ export function OfferEditorForm({
           : "Update your offer details and marketplace placement."}
       </h2>
       <p>
-        Choose the game, section, price, stock, delivery language, and the product gallery. Your
-        main image becomes the preview customers see first.
+        Choose the game, section, delivery style, price, stock, and product gallery. Your main
+        image becomes the preview customers see first.
       </p>
 
       {isLoading ? (
@@ -592,6 +655,35 @@ export function OfferEditorForm({
             placeholder="Explain exactly what the buyer receives."
           />
 
+          <fieldset className="seller-delivery-mode">
+            <legend>Delivery type</legend>
+            <div className="seller-delivery-mode__options">
+              {offerDeliveryModes.map((option) => (
+                <label
+                  key={option.value}
+                  className={
+                    deliveryMode === option.value
+                      ? "seller-delivery-mode__option seller-delivery-mode__option--active"
+                      : "seller-delivery-mode__option"
+                  }
+                >
+                  <input
+                    type="radio"
+                    name="offer-delivery-mode"
+                    value={option.value}
+                    checked={deliveryMode === option.value}
+                    onChange={(event) => setDeliveryMode(event.target.value as OfferDeliveryMode)}
+                  />
+
+                  <div>
+                    <strong>{option.label}</strong>
+                    <span>{option.description}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
           <div className="seller-form-grid">
             <div>
               <label htmlFor="offer-price">Price (USD)</label>
@@ -625,7 +717,7 @@ export function OfferEditorForm({
                 type="text"
                 value={deliveryTime}
                 onChange={(event) => setDeliveryTime(event.target.value)}
-                placeholder="Example: Within 10 minutes"
+                placeholder={deliveryTimePlaceholder}
               />
             </div>
             <div>
@@ -643,6 +735,28 @@ export function OfferEditorForm({
               </select>
             </div>
           </div>
+
+          {deliveryMode === "instant" ? (
+            <div className="seller-delivery-secret">
+              <label htmlFor="offer-delivery-secret">Delivery details shown after purchase</label>
+              <textarea
+                id="offer-delivery-secret"
+                rows={6}
+                value={instantDeliveryContent}
+                onChange={(event) => setInstantDeliveryContent(event.target.value)}
+                placeholder="Example: Login email: ... Password: ... Recovery code: ..."
+              />
+              <p>
+                This content stays hidden from the public marketplace and only unlocks after the
+                buyer creates the order.
+              </p>
+            </div>
+          ) : (
+            <div className="seller-delivery-secret seller-delivery-secret--info">
+              <strong>{getOfferDeliveryModeLabel(deliveryMode)}</strong>
+              <p>{getOfferDeliveryModeDescription(deliveryMode)}</p>
+            </div>
+          )}
 
           <div className="seller-offer-images">
             <div className="seller-offer-images__copy">

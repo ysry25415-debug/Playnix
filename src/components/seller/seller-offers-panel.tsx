@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import { getPrimaryOfferImage, OFFER_IMAGES_BUCKET } from "@/lib/offer-images";
 import { getMarketplaceGame } from "@/lib/marketplace-data";
 import { type OfferWithImagesRow } from "@/lib/marketplace-types";
@@ -35,7 +36,7 @@ export function SellerOffersPanel() {
       const { data, error: offersError } = await supabase
         .from("offers")
         .select(
-          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_time,stock_count,status,created_at,updated_at,offer_images(id,offer_id,seller_id,storage_path,public_url,is_primary,sort_order,created_at)"
+          "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_mode,delivery_time,stock_count,status,created_at,updated_at,offer_images(id,offer_id,seller_id,storage_path,public_url,is_primary,sort_order,created_at)"
         )
         .eq("seller_id", user.id)
         .order("created_at", { ascending: false });
@@ -189,6 +190,7 @@ export function SellerOffersPanel() {
                   <strong>${offer.price_usd.toFixed(2)}</strong>
                   <span>{offer.status}</span>
                   <span>Stock: {offer.stock_count}</span>
+                  <span>{getOfferDeliveryModeLabel(offer.delivery_mode)}</span>
                   <span>{offer.delivery_time}</span>
                 </div>
 

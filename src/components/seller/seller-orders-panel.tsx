@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import { supabase } from "@/lib/supabase-client";
 import { type OrderRow } from "@/lib/marketplace-types";
 
@@ -30,7 +32,9 @@ export function SellerOrdersPanel() {
 
       const { data, error: ordersError } = await supabase
         .from("orders")
-        .select("id,offer_id,buyer_id,seller_id,game_slug,category_slug,offer_title,price_usd,status,created_at")
+        .select(
+          "id,offer_id,buyer_id,seller_id,game_slug,category_slug,offer_title,price_usd,delivery_mode,status,created_at"
+        )
         .eq("seller_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -103,6 +107,7 @@ export function SellerOrdersPanel() {
                 <span>
                   {order.game_slug} / {order.category_slug}
                 </span>
+                <span>{getOfferDeliveryModeLabel(order.delivery_mode)}</span>
               </div>
               <div>
                 <strong>${order.price_usd.toFixed(2)}</strong>
@@ -110,6 +115,9 @@ export function SellerOrdersPanel() {
               </div>
               <div>
                 <span>{new Date(order.created_at).toLocaleString()}</span>
+                <Link className="ghost-button" href={`/orders/${order.id}`}>
+                  Open Order
+                </Link>
               </div>
             </article>
           ))}
