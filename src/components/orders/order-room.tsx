@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { PageLoader } from "@/components/shared/page-loader";
 import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
@@ -40,9 +40,30 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvc, setCvc] = useState("");
+  const bootstrapTriedRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
+
+    async function bootstrapRoomIfMissing() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        return false;
+      }
+
+      const response = await fetch("/api/orders/room/bootstrap", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ orderId }),
+      });
+
+      return response.ok;
+    }
 
     async function loadOrderRoom(silent = false) {
       if (!silent) {
@@ -121,6 +142,18 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
       const typedRoom = roomResult.data as OrderTradeRoomRow | null;
       const typedDelivery = (deliveryResult.data ?? null) as OrderDeliveryDetailsRow | null;
       const typedMessages = (messagesResult.data ?? []) as OrderMessageRow[];
+
+      if (!typedRoom && !bootstrapTriedRef.current) {
+        bootstrapTriedRef.current = true;
+        const bootstrapped = await bootstrapRoomIfMissing();
+
+        if (!isMounted) return;
+
+        if (bootstrapped) {
+          await loadOrderRoom(silent);
+          return;
+        }
+      }
 
       setOrder(typedOrder);
       setRoom(typedRoom);
@@ -383,7 +416,29 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   }
 
   if (!order || !room) {
-    return null;
+    return (
+      <div className="module-page order-room-page">
+        <div className="shell">
+          <div className="module-page__shell order-room-shell">
+            <span className="section-eyebrow">Delivery Room</span>
+            <h1>Room setup is not ready yet.</h1>
+            <p>
+              The order exists, but the delivery-room record was not found yet. This usually
+              happens when old orders were created before the new room workflow.
+            </p>
+            <div className="hero-actions">
+              <button className="primary-button" type="button" onClick={() => window.location.reload()}>
+                Retry
+              </button>
+              <Link className="ghost-button" href="/notifications">
+                Back to Notifications
+              </Link>
+            </div>
+            {error ? <p className="auth-feedback auth-feedback--error">{error}</p> : null}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const isBuyer = viewerId === order.buyer_id;
