@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import { getPrimaryOfferImage, OFFER_IMAGES_BUCKET } from "@/lib/offer-images";
 import { getMarketplaceGame } from "@/lib/marketplace-data";
@@ -11,6 +12,7 @@ import { supabase } from "@/lib/supabase-client";
 
 export function SellerOffersPanel() {
   const [offers, setOffers] = useState<OfferWithImagesRow[]>([]);
+  const [viewerRole, setViewerRole] = useState<AppRole | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -28,18 +30,26 @@ export function SellerOffersPanel() {
       if (!user) {
         if (isMounted) {
           setOffers([]);
+          setViewerRole(null);
           setIsLoading(false);
         }
         return;
       }
 
-      const { data, error: offersError } = await supabase
+      const role = await fetchRoleForCurrentUser(supabase);
+      if (!isMounted) return;
+
+      setViewerRole(role);
+
+      const offersQuery = supabase
         .from("offers")
         .select(
           "id,seller_id,game_slug,category_slug,title,description,price_usd,delivery_mode,delivery_time,stock_count,status,created_at,updated_at,offer_images(id,offer_id,seller_id,storage_path,public_url,is_primary,sort_order,created_at)"
         )
-        .eq("seller_id", user.id)
         .order("created_at", { ascending: false });
+
+      const { data, error: offersError } =
+        role === "admin" ? await offersQuery : await offersQuery.eq("seller_id", user.id);
 
       if (!isMounted) return;
 
@@ -82,11 +92,10 @@ export function SellerOffersPanel() {
     const offer = offers.find((item) => item.id === offerId);
     const imagePaths = offer?.offer_images?.map((image) => image.storage_path) ?? [];
 
-    const { error: deleteError } = await supabase
-      .from("offers")
-      .delete()
-      .eq("id", offerId)
-      .eq("seller_id", user.id);
+    const role = viewerRole ?? (await fetchRoleForCurrentUser(supabase));
+    const deleteQuery = supabase.from("offers").delete().eq("id", offerId);
+    const { error: deleteError } =
+      role === "admin" ? await deleteQuery : await deleteQuery.eq("seller_id", user.id);
 
     setDeletingId(null);
 
@@ -125,6 +134,12 @@ export function SellerOffersPanel() {
         Offers is your live catalog. Each listing chooses a game, a sub-category, a price, and the
         exact lane where customers will discover it.
       </p>
+
+      {viewerRole === "admin" ? (
+        <p className="auth-feedback auth-feedback--success">
+          Admin view is enabled. You are currently seeing all seller offers.
+        </p>
+      ) : null}
 
       <div className="hero-actions">
         <Link className="primary-button" href="/sell/offers/new">

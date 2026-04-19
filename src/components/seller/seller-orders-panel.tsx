@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import { supabase } from "@/lib/supabase-client";
 import { type OrderRow } from "@/lib/marketplace-types";
 
 export function SellerOrdersPanel() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [viewerRole, setViewerRole] = useState<AppRole | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -25,18 +27,26 @@ export function SellerOrdersPanel() {
       if (!user) {
         if (isMounted) {
           setOrders([]);
+          setViewerRole(null);
           setIsLoading(false);
         }
         return;
       }
 
-      const { data, error: ordersError } = await supabase
+      const role = await fetchRoleForCurrentUser(supabase);
+      if (!isMounted) return;
+
+      setViewerRole(role);
+
+      const ordersQuery = supabase
         .from("orders")
         .select(
           "id,offer_id,buyer_id,seller_id,game_slug,category_slug,offer_title,price_usd,delivery_mode,status,created_at"
         )
-        .eq("seller_id", user.id)
         .order("created_at", { ascending: false });
+
+      const { data, error: ordersError } =
+        role === "admin" ? await ordersQuery : await ordersQuery.eq("seller_id", user.id);
 
       if (!isMounted) return;
 
@@ -74,6 +84,12 @@ export function SellerOrdersPanel() {
         Orders centralizes all purchases placed against your storefront so you can see what was
         bought, when it was created, and what still needs delivery.
       </p>
+
+      {viewerRole === "admin" ? (
+        <p className="auth-feedback auth-feedback--success">
+          Admin view is enabled. You are currently seeing all marketplace orders.
+        </p>
+      ) : null}
 
       <div className="seller-module__stats">
         <article className="seller-module__card">
