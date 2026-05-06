@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { sellerCenterNavigation } from "@/lib/marketplace-data";
+import { supabase } from "@/lib/supabase-client";
 
 type SellerCenterShellProps = {
   title: string;
@@ -18,6 +19,43 @@ export function SellerCenterShell({
   children,
 }: SellerCenterShellProps) {
   const pathname = usePathname();
+  const [balanceUsd, setBalanceUsd] = useState(0);
+  const [pendingUsd, setPendingUsd] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSellerBalance() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("orders")
+        .select("price_usd,status")
+        .eq("seller_id", user.id);
+
+      if (!isMounted) return;
+
+      const orders = data ?? [];
+      const released = orders
+        .filter((order) => order.status === "delivered")
+        .reduce((sum, order) => sum + Number(order.price_usd || 0), 0);
+      const pending = orders
+        .filter((order) => order.status === "paid" || order.status === "pending")
+        .reduce((sum, order) => sum + Number(order.price_usd || 0), 0);
+
+      setBalanceUsd(released);
+      setPendingUsd(pending);
+    }
+
+    void loadSellerBalance();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <main className="seller-center-page">
@@ -27,6 +65,12 @@ export function SellerCenterShell({
             <span className="eyebrow-chip">Seller Center</span>
             <h1>{title}</h1>
             <p>{description}</p>
+          </div>
+
+          <div className="seller-balance-card">
+            <span>Account balance</span>
+            <strong>${balanceUsd.toFixed(2)}</strong>
+            <small>Pending: ${pendingUsd.toFixed(2)}</small>
           </div>
 
           <nav className="seller-center-nav" aria-label="Seller Center">
@@ -52,3 +96,4 @@ export function SellerCenterShell({
     </main>
   );
 }
+

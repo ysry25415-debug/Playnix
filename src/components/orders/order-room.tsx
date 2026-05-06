@@ -47,6 +47,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const [cvc, setCvc] = useState("");
   const bootstrapTriedRef = useRef(false);
   const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -226,6 +227,10 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
       window.clearInterval(interval);
     };
   }, [orderId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length]);
 
   async function callOrderApi(
     endpoint: string,
@@ -496,6 +501,10 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const sellerName = profiles[order.seller_id]?.full_name || "Seller";
   const buyerAvatar = profiles[order.buyer_id]?.avatar_url || "";
   const sellerAvatar = profiles[order.seller_id]?.avatar_url || "";
+  const cardHolderReady = cardHolder.trim().length > 1;
+  const cardNumberReady = cardNumber.replace(/\D/g, "").length >= 12;
+  const expiryReady = expiry.trim().length >= 4;
+  const cvcReady = cvc.replace(/\D/g, "").length >= 3;
 
   return (
     <div className="module-page order-room-page">
@@ -638,18 +647,27 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
           ) : null}
 
           {buyerNeedsPayment ? (
-            <form className="auth-form order-room__payment-form" onSubmit={handlePaymentSubmit}>
-              <strong>Open chat with payment hold</strong>
-              <p>
-                Your payment is currently fake for testing, but the interface treats it like an
-                escrow hold. The money stays on the platform until you confirm receipt of the
-                product.
-              </p>
+            <form className="auth-form order-room__payment-form order-room__payment-card" onSubmit={handlePaymentSubmit}>
+              <div className="order-room__payment-head">
+                <div>
+                  <strong>Open chat with payment hold</strong>
+                  <p>
+                    Your payment is currently fake for testing, but the interface treats it like an
+                    escrow hold. The money stays on the platform until you confirm receipt.
+                  </p>
+                </div>
+                <div className="order-room__card-preview">
+                  <span>BEN10 HOLD</span>
+                  <strong>{cardNumberReady ? `**** ${cardNumber.replace(/\D/g, "").slice(-4)}` : "**** **** **** ****"}</strong>
+                  <small>{cardHolderReady ? cardHolder : "CARD HOLDER"}</small>
+                </div>
+              </div>
 
               <label htmlFor="card-holder">Card holder</label>
               <input
                 id="card-holder"
                 type="text"
+                className={cardHolderReady ? "order-room__pay-input order-room__pay-input--ready" : "order-room__pay-input"}
                 value={cardHolder}
                 onChange={(event) => setCardHolder(event.target.value)}
                 placeholder="Player Name"
@@ -660,6 +678,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                 id="card-number"
                 type="text"
                 inputMode="numeric"
+                className={cardNumberReady ? "order-room__pay-input order-room__pay-input--ready" : "order-room__pay-input"}
                 value={cardNumber}
                 onChange={(event) => setCardNumber(event.target.value)}
                 placeholder="4242 4242 4242 4242"
@@ -671,6 +690,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                   <input
                     id="card-expiry"
                     type="text"
+                    className={expiryReady ? "order-room__pay-input order-room__pay-input--ready" : "order-room__pay-input"}
                     value={expiry}
                     onChange={(event) => setExpiry(event.target.value)}
                     placeholder="12/30"
@@ -682,6 +702,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                     id="card-cvc"
                     type="text"
                     inputMode="numeric"
+                    className={cvcReady ? "order-room__pay-input order-room__pay-input--ready" : "order-room__pay-input"}
                     value={cvc}
                     onChange={(event) => setCvc(event.target.value)}
                     placeholder="123"
@@ -690,7 +711,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
               </div>
 
               <div className="hero-actions">
-                <button className="primary-button" type="submit" disabled={isActionLoading}>
+                <button className="primary-button" type="submit" disabled={isActionLoading || !cardHolderReady || !cardNumberReady || !expiryReady || !cvcReady}>
                   {isActionLoading ? "Holding funds..." : "Open Chat"}
                 </button>
               </div>
@@ -778,6 +799,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                   );
                 })
               )}
+              <div ref={messagesEndRef} />
             </div>
 
             <form className="order-room__composer" onSubmit={handleSendMessage}>
@@ -863,4 +885,5 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
     </div>
   );
 }
+
 
