@@ -46,6 +46,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const [expiry, setExpiry] = useState("");
   const [cvc, setCvc] = useState("");
   const bootstrapTriedRef = useRef(false);
+  const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -351,6 +352,9 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
       setExpiry("");
       setCvc("");
       await refreshRoomState();
+      window.setTimeout(() => {
+        composerInputRef.current?.focus();
+      }, 120);
     }
   }
 
@@ -488,6 +492,10 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
         : room.payment_status === "released"
           ? "Released to seller"
           : "Refunded to buyer";
+  const buyerName = profiles[order.buyer_id]?.full_name || "Buyer";
+  const sellerName = profiles[order.seller_id]?.full_name || "Seller";
+  const buyerAvatar = profiles[order.buyer_id]?.avatar_url || "";
+  const sellerAvatar = profiles[order.seller_id]?.avatar_url || "";
 
   return (
     <div className="module-page order-room-page">
@@ -516,6 +524,31 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
             <article className="seller-module__card">
               <strong>Delivery mode</strong>
               <span>{getOfferDeliveryModeLabel(order.delivery_mode)}</span>
+            </article>
+          </div>
+
+          <div className="order-room__participants">
+            <article className="order-room__participant">
+              {sellerAvatar ? (
+                <img src={sellerAvatar} alt={sellerName} />
+              ) : (
+                <div className="order-room__participant-fallback">{sellerName.slice(0, 1)}</div>
+              )}
+              <div>
+                <strong>Seller</strong>
+                <span>{sellerName}</span>
+              </div>
+            </article>
+            <article className="order-room__participant">
+              {buyerAvatar ? (
+                <img src={buyerAvatar} alt={buyerName} />
+              ) : (
+                <div className="order-room__participant-fallback">{buyerName.slice(0, 1)}</div>
+              )}
+              <div>
+                <strong>Customer</strong>
+                <span>{buyerName}</span>
+              </div>
             </article>
           </div>
 
@@ -698,6 +731,14 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
               </span>
             </div>
 
+            {!canSendMessages ? (
+              <div className="order-room__chat-lock">
+                {room.room_status === "awaiting_seller"
+                  ? "Seller must press Start Room first."
+                  : "Customer must enter card details first, then chat opens automatically."}
+              </div>
+            ) : null}
+
             <div className="order-room__messages">
               {messages.length === 0 ? (
                 <div className="order-room__empty">
@@ -712,9 +753,9 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                     : message.sender_id === viewerId
                       ? "You"
                       : message.sender_id === order.buyer_id
-                        ? "Buyer"
+                        ? `Buyer - ${buyerName}`
                         : message.sender_id === order.seller_id
-                          ? "Seller"
+                          ? `Seller - ${sellerName}`
                           : profile?.full_name || "Participant";
 
                   return (
@@ -741,10 +782,15 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
 
             <form className="order-room__composer" onSubmit={handleSendMessage}>
               <textarea
+                ref={composerInputRef}
                 rows={3}
                 value={messageInput}
                 onChange={(event) => setMessageInput(event.target.value)}
-                placeholder="Write your message here..."
+                placeholder={
+                  canSendMessages
+                    ? "Write your message here..."
+                    : "Chat is locked until payment step is completed."
+                }
                 disabled={!canSendMessages || isActionLoading}
               />
               <div className="hero-actions">
@@ -817,3 +863,4 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
     </div>
   );
 }
+
