@@ -31,19 +31,38 @@ export function SellerCenterShell({
 
       if (!user) return;
 
-      const { data } = await supabase
+      const { data: orders, error: ordersError } = await supabase
         .from("orders")
-        .select("price_usd,status")
+        .select("id,price_usd")
         .eq("seller_id", user.id);
+
+      if (ordersError || !orders) return;
+
+      const orderIds = orders.map((item) => item.id);
+      let roomByOrderId = new Map<string, "unpaid" | "held" | "released" | "refunded">();
+
+      if (orderIds.length > 0) {
+        const { data: rooms } = await supabase
+          .from("order_trade_rooms")
+          .select("order_id,payment_status")
+          .eq("seller_id", user.id)
+          .in("order_id", orderIds);
+
+        roomByOrderId = new Map(
+          (rooms ?? []).map((room) => [room.order_id, room.payment_status as "unpaid" | "held" | "released" | "refunded"])
+        );
+      }
 
       if (!isMounted) return;
 
-      const orders = data ?? [];
       const released = orders
-        .filter((order) => order.status === "delivered")
+        .filter((order) => roomByOrderId.get(order.id) === "released")
         .reduce((sum, order) => sum + Number(order.price_usd || 0), 0);
       const pending = orders
-        .filter((order) => order.status === "paid" || order.status === "pending")
+        .filter((order) => {
+          const paymentStatus = roomByOrderId.get(order.id);
+          return paymentStatus === "held" || paymentStatus === "unpaid";
+        })
         .reduce((sum, order) => sum + Number(order.price_usd || 0), 0);
 
       setBalanceUsd(released);

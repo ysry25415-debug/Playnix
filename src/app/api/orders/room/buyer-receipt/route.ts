@@ -77,6 +77,15 @@ export async function POST(request: NextRequest) {
       actionHref: `/orders/${orderId}`,
     });
 
+    await createUserNotification(adminClient, {
+      recipientId: context.order.buyer_id,
+      actorId: context.order.seller_id,
+      orderId,
+      title: "Delivery confirmed",
+      body: "You confirmed receipt. Funds were released to the seller and the order is now complete.",
+      actionHref: `/orders/${orderId}`,
+    });
+
     return NextResponse.json({ ok: true, outcome: "completed" });
   }
 

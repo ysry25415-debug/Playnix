@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { SellerSectionPage } from "@/components/seller/seller-section-page";
+import { TransactionHistoryPanel } from "@/components/shared/transaction-history-panel";
 
 const sellerSections = {
   boosting: {
@@ -99,6 +100,21 @@ export default async function SellerSectionRoute({
 
   const secondaryAction =
     section === "view-profile" ? { href: "/account", label: "Back To Account" } : undefined;
+
+  if (section === "wallet") {
+    return (
+      <div className="seller-module">
+        <span className="section-eyebrow">{config.eyebrow}</span>
+        <h2>{config.title}</h2>
+        <p>{config.description}</p>
+        <TransactionHistoryPanel
+          mode="seller"
+          title="Seller payout ledger"
+          description="Follow held funds, released sales, and refunded orders in one place."
+        />
+      </div>
+    );
+  }
 
   return (
     <SellerSectionPage

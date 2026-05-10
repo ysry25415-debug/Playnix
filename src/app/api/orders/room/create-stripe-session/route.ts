@@ -43,15 +43,16 @@ export async function POST(request: NextRequest) {
   }
 
   const origin = getAppOrigin(request);
-  const orderUrl = `${origin}/orders/${orderId}`;
+  const successUrl = `${origin}/payments/success?order_id=${encodeURIComponent(orderId)}&stripe_session_id={CHECKOUT_SESSION_ID}`;
+  const cancelUrl = `${origin}/payments/cancel?order_id=${encodeURIComponent(orderId)}`;
   const { data, error } = await createStripeCheckoutSession({
     orderId,
     offerTitle: context.order.offer_title,
     amountUsd: context.order.price_usd,
     buyerId: context.order.buyer_id,
     sellerId: context.order.seller_id,
-    successUrl: `${orderUrl}?stripe_session_id={CHECKOUT_SESSION_ID}`,
-    cancelUrl: orderUrl,
+    successUrl,
+    cancelUrl,
   });
 
   if (error || !data?.url) {

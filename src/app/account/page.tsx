@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { type User } from "@supabase/supabase-js";
 
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { TransactionHistoryPanel } from "@/components/shared/transaction-history-panel";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
 import { triggerPageLoader } from "@/lib/page-loader-events";
@@ -326,6 +327,12 @@ export default function AccountPage() {
                   {isLoggingOut ? "Logging out..." : "Log Out"}
                 </button>
               </div>
+
+              <TransactionHistoryPanel
+                mode="all"
+                title="Purchase and sales ledger"
+                description="Every order payment appears here with held, released, or refunded status."
+              />
 
               <p className="auth-switch">
                 Open <Link href="/notifications">Notifications</Link>.
