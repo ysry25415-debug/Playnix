@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import {
@@ -29,6 +30,7 @@ type PartyProfile = {
 };
 
 export function OrderRoom({ orderId }: OrderRoomProps) {
+  const searchParams = useSearchParams();
   const [order, setOrder] = useState<OrderRow | null>(null);
   const [room, setRoom] = useState<OrderTradeRoomRow | null>(null);
   const [deliveryDetails, setDeliveryDetails] = useState<OrderDeliveryDetailsRow | null>(null);
@@ -41,13 +43,10 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [sellerWindowMinutes, setSellerWindowMinutes] = useState("60");
   const [messageInput, setMessageInput] = useState("");
-  const [cardHolder, setCardHolder] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvc, setCvc] = useState("");
   const bootstrapTriedRef = useRef(false);
   const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const stripeConfirmTriedRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -232,6 +231,49 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length]);
 
+  useEffect(() => {
+    const sessionId = searchParams.get("stripe_session_id");
+
+    if (!sessionId || stripeConfirmTriedRef.current) {
+      return;
+    }
+
+    stripeConfirmTriedRef.current = true;
+
+    async function confirmStripePayment() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        setError("Please log in again to confirm this payment.");
+        return;
+      }
+
+      setIsActionLoading(true);
+      const response = await fetch("/api/orders/room/confirm-stripe-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ orderId, sessionId }),
+      });
+      const payload = await response.json().catch(() => null);
+      setIsActionLoading(false);
+
+      if (!response.ok) {
+        setError(payload?.error ?? "Could not confirm Stripe payment.");
+        return;
+      }
+
+      setSuccess("Stripe payment confirmed. Chat is now open.");
+      await refreshRoomState();
+      window.history.replaceState(null, "", `/orders/${orderId}`);
+    }
+
+    void confirmStripePayment();
+  }, [orderId, searchParams]);
+
   async function callOrderApi(
     endpoint: string,
     payload: Record<string, unknown>,
@@ -336,31 +378,16 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
     }
   }
 
-  async function handlePaymentSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleStripeCheckout() {
+    const payload = await callOrderApi("/api/orders/room/create-stripe-session", { orderId });
+    const checkoutUrl = typeof payload?.url === "string" ? payload.url : "";
 
-    const payload = await callOrderApi(
-      "/api/orders/room/pay",
-      {
-        orderId,
-        cardHolder,
-        cardNumber,
-        expiry,
-        cvc,
-      },
-      "Funds are now held safely on the platform. You can continue in chat."
-    );
-
-    if (payload) {
-      setCardHolder("");
-      setCardNumber("");
-      setExpiry("");
-      setCvc("");
-      await refreshRoomState();
-      window.setTimeout(() => {
-        composerInputRef.current?.focus();
-      }, 120);
+    if (!checkoutUrl) {
+      setError("Stripe did not return a checkout link.");
+      return;
     }
+
+    window.location.assign(checkoutUrl);
   }
 
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
@@ -501,10 +528,6 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const sellerName = profiles[order.seller_id]?.full_name || "Seller";
   const buyerAvatar = profiles[order.buyer_id]?.avatar_url || "";
   const sellerAvatar = profiles[order.seller_id]?.avatar_url || "";
-  const cardHolderReady = cardHolder.trim().length > 1;
-  const cardNumberReady = cardNumber.replace(/\D/g, "").length >= 12;
-  const expiryReady = expiry.trim().length >= 4;
-  const cvcReady = cvc.replace(/\D/g, "").length >= 3;
 
   return (
     <div className="module-page order-room-page">
@@ -647,83 +670,41 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
           ) : null}
 
           {buyerNeedsPayment ? (
-            <form className="auth-form order-room__payment-form order-room__payment-card" onSubmit={handlePaymentSubmit}>
+            <div className="auth-form order-room__payment-form order-room__payment-card">
               <div className="order-room__payment-head">
                 <div>
-                  <strong>Open chat with payment hold</strong>
+                  <strong>Secure payment hold</strong>
                   <p>
-                    Your payment is currently fake for testing, but the interface treats it like an
-                    escrow hold. The money stays on the platform until you confirm receipt.
+                    Complete payment through Stripe Checkout. After Stripe confirms the payment,
+                    the funds stay held and the order chat opens automatically.
                   </p>
                 </div>
                 <div className="order-room__card-preview">
-                  <span>BEN10 HOLD</span>
-                  <strong>{cardNumberReady ? `**** ${cardNumber.replace(/\D/g, "").slice(-4)}` : "**** **** **** ****"}</strong>
-                  <small>{cardHolderReady ? cardHolder : "CARD HOLDER"}</small>
-                </div>
-              </div>
-
-              <label htmlFor="card-holder">Card holder</label>
-              <input
-                id="card-holder"
-                type="text"
-                className={cardHolderReady ? "order-room__pay-input order-room__pay-input--ready" : "order-room__pay-input"}
-                value={cardHolder}
-                onChange={(event) => setCardHolder(event.target.value)}
-                placeholder="Player Name"
-              />
-
-              <label htmlFor="card-number">Card number</label>
-              <input
-                id="card-number"
-                type="text"
-                inputMode="numeric"
-                className={cardNumberReady ? "order-room__pay-input order-room__pay-input--ready" : "order-room__pay-input"}
-                value={cardNumber}
-                onChange={(event) => setCardNumber(event.target.value)}
-                placeholder="4242 4242 4242 4242"
-              />
-
-              <div className="seller-form-grid">
-                <div>
-                  <label htmlFor="card-expiry">Expiry</label>
-                  <input
-                    id="card-expiry"
-                    type="text"
-                    className={expiryReady ? "order-room__pay-input order-room__pay-input--ready" : "order-room__pay-input"}
-                    value={expiry}
-                    onChange={(event) => setExpiry(event.target.value)}
-                    placeholder="12/30"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="card-cvc">CVC</label>
-                  <input
-                    id="card-cvc"
-                    type="text"
-                    inputMode="numeric"
-                    className={cvcReady ? "order-room__pay-input order-room__pay-input--ready" : "order-room__pay-input"}
-                    value={cvc}
-                    onChange={(event) => setCvc(event.target.value)}
-                    placeholder="123"
-                  />
+                  <span>STRIPE CHECKOUT</span>
+                  <strong>${order.price_usd.toFixed(2)} USD</strong>
+                  <small>Protected hold</small>
                 </div>
               </div>
 
               <div className="hero-actions">
-                <button className="primary-button" type="submit" disabled={isActionLoading || !cardHolderReady || !cardNumberReady || !expiryReady || !cvcReady}>
-                  {isActionLoading ? "Holding funds..." : "Open Chat"}
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={handleStripeCheckout}
+                  disabled={isActionLoading}
+                >
+                  {isActionLoading ? "Opening Stripe..." : "Pay with Stripe"}
                 </button>
               </div>
-            </form>
+            </div>
           ) : null}
 
           {sellerWaitingForBuyer ? (
             <div className="order-room__setup">
               <strong>Waiting for buyer payment hold</strong>
               <p>
-                The room is open. Once the buyer enters their card details, the funds will be held
-                and the live chat will unlock.
+                The room is open. Once the buyer completes Stripe Checkout, funds will be held and
+                the live chat will unlock automatically.
               </p>
             </div>
           ) : null}
@@ -756,7 +737,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
               <div className="order-room__chat-lock">
                 {room.room_status === "awaiting_seller"
                   ? "Seller must press Start Room first."
-                  : "Customer must enter card details first, then chat opens automatically."}
+                  : "Customer must complete Stripe Checkout first, then chat opens automatically."}
               </div>
             ) : null}
 
@@ -885,5 +866,4 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
     </div>
   );
 }
-
 
