@@ -225,7 +225,7 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="site-header site-header--marketplace">
+    <header className="site-header site-header--marketplace eld-header">
       <div className="market-topbar">
         <div className="shell market-topbar__shell">
           <span>Trade smarter with protected orders and fast seller delivery lanes.</span>

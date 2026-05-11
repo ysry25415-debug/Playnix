@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function HeroSection() {
   return (
-    <section className="hero-section">
+    <section className="hero-section eld-hero">
       <div className="shell shell--hero">
         <div className="hero-stage">
           <div className="hero-stage__image">

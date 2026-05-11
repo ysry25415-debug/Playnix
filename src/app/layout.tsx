@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import "../../styles/playnix-theme.css";
 import "./globals.css";
+import "../../styles/eldorado/index.css";
 
 import { AppVersionGuard } from "@/components/layout/app-version-guard";
 import { GlobalRouteLoader } from "@/components/layout/global-route-loader";
