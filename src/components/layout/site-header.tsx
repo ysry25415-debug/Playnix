@@ -18,10 +18,10 @@ const marketplaceTopLinks = [
 ];
 
 const marketplaceMobileTabs = [
-  { href: "/marketplace", label: "Hub" },
-  { href: "/marketplace/minecraft", label: "Minecraft" },
-  { href: "/marketplace/roblox", label: "Roblox" },
-  { href: "/marketplace/arc-raiders", label: "Arc Raiders" },
+  { href: "/", label: "Home" },
+  { href: "/marketplace", label: "Marketplace" },
+  { href: "/sell", label: "Sell" },
+  { href: "/support", label: "Support" },
 ];
 
 export function SiteHeader() {
@@ -128,8 +128,6 @@ export function SiteHeader() {
 
   const roleLabel =
     userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : userRole === "customer" ? "Customer" : "Loading role...";
-  const isMarketplaceRoute = pathname === "/marketplace" || pathname.startsWith("/marketplace/");
-
   function isActivePath(href: string) {
     if (href === "/") {
       return pathname === "/";
@@ -226,82 +224,70 @@ export function SiteHeader() {
     );
   }
 
-  if (isMarketplaceRoute) {
-    return (
-      <header className="site-header site-header--marketplace">
-        <div className="market-topbar">
-          <div className="shell market-topbar__shell">
-            <span>Trade smarter with protected orders and fast seller delivery lanes.</span>
-            <div className="market-topbar__links">
-              {marketplaceTopLinks.map((item) => (
-                <Link key={item.label} href={item.href}>
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="shell nav-shell nav-shell--marketplace">
-          {renderBrand()}
-          {renderPrimaryNavigation()}
-          {renderSessionActions()}
-        </div>
-
-        <div className="market-tools">
-          <div className="shell market-tools__shell">
-            <label className="market-tools__search" htmlFor="market-search-ui-only">
-              <span>Search marketplace</span>
-              <input
-                id="market-search-ui-only"
-                type="search"
-                placeholder="UI-only search (integration next phase)"
-                aria-label="Search marketplace"
-                readOnly
-              />
-            </label>
-
-            <div className="market-tools__controls" aria-label="Marketplace tools">
-              <button className="market-tools__control" type="button">
-                EN / AR
-              </button>
-              <button className="market-tools__control" type="button">
-                USD
-              </button>
-              <button className="market-tools__control" type="button">
-                Categories
-              </button>
-              <button className="market-tools__control" type="button">
-                Filters
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <nav className="market-mobile-tabs" aria-label="Marketplace quick tabs">
-          <div className="shell market-mobile-tabs__shell">
-            {marketplaceMobileTabs.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={isActivePath(item.href) ? "market-mobile-tab market-mobile-tab--active" : "market-mobile-tab"}
-              >
+  return (
+    <header className="site-header site-header--marketplace">
+      <div className="market-topbar">
+        <div className="shell market-topbar__shell">
+          <span>Trade smarter with protected orders and fast seller delivery lanes.</span>
+          <div className="market-topbar__links">
+            {marketplaceTopLinks.map((item) => (
+              <Link key={item.label} href={item.href}>
                 {item.label}
               </Link>
             ))}
           </div>
-        </nav>
-      </header>
-    );
-  }
+        </div>
+      </div>
 
-  return (
-    <header className="site-header">
-      <div className="shell nav-shell">
+      <div className="shell nav-shell nav-shell--marketplace">
         {renderBrand()}
         {renderPrimaryNavigation()}
         {renderSessionActions()}
       </div>
+
+      <div className="market-tools">
+        <div className="shell market-tools__shell">
+          <label className="market-tools__search" htmlFor="market-search-ui-only">
+            <span>Search BEN10 platform</span>
+            <input
+              id="market-search-ui-only"
+              type="search"
+              placeholder="UI-only search (integration next phase)"
+              aria-label="Search BEN10 platform"
+              readOnly
+            />
+          </label>
+
+          <div className="market-tools__controls" aria-label="Platform tools">
+            <button className="market-tools__control" type="button">
+              EN / AR
+            </button>
+            <button className="market-tools__control" type="button">
+              USD
+            </button>
+            <button className="market-tools__control" type="button">
+              All Games
+            </button>
+            <button className="market-tools__control" type="button">
+              Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <nav className="market-mobile-tabs" aria-label="Platform quick tabs">
+        <div className="shell market-mobile-tabs__shell">
+          {marketplaceMobileTabs.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={isActivePath(item.href) ? "market-mobile-tab market-mobile-tab--active" : "market-mobile-tab"}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
     </header>
   );
 }
