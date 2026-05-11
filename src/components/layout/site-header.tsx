@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { type User } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 
@@ -10,7 +11,21 @@ import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 
+const marketplaceTopLinks = [
+  { href: "/support", label: "Buyer Protection" },
+  { href: "/support", label: "Fast Delivery" },
+  { href: "/support", label: "24/7 Support" },
+];
+
+const marketplaceMobileTabs = [
+  { href: "/marketplace", label: "Hub" },
+  { href: "/marketplace/minecraft", label: "Minecraft" },
+  { href: "/marketplace/roblox", label: "Roblox" },
+  { href: "/marketplace/arc-raiders", label: "Arc Raiders" },
+];
+
 export function SiteHeader() {
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -113,79 +128,179 @@ export function SiteHeader() {
 
   const roleLabel =
     userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : userRole === "customer" ? "Customer" : "Loading role...";
+  const isMarketplaceRoute = pathname === "/marketplace" || pathname.startsWith("/marketplace/");
+
+  function isActivePath(href: string) {
+    if (href === "/") {
+      return pathname === "/";
+    }
+
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
+  function renderBrand() {
+    return (
+      <Link className="brand-mark" href="/">
+        <span className="brand-mark__visual">
+          <PlaynixLogo />
+        </span>
+        <span className="brand-mark__copy">
+          <strong>BEN10</strong>
+          <span>Omnitrix Marketplace</span>
+        </span>
+      </Link>
+    );
+  }
+
+  function renderPrimaryNavigation() {
+    return (
+      <nav className="site-nav" aria-label="Primary">
+        {siteNavigation.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={isActivePath(item.href) ? "site-nav__link site-nav__link--active" : "site-nav__link"}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+    );
+  }
+
+  function renderSessionActions() {
+    if (user) {
+      return (
+        <div className="site-actions site-actions--user">
+          <Link className="user-chip" href="/account">
+            <span className="user-chip__avatar" aria-hidden="true">
+              {avatarUrl ? <img src={avatarUrl} alt="" /> : avatarFallback}
+            </span>
+            <span className="user-chip__copy">
+              <span className="user-chip__name-row">
+                <strong>{displayName}</strong>
+                {userRole === "seller" ? <SellerVerifiedBadge /> : null}
+              </span>
+              <span>{roleLabel}</span>
+            </span>
+          </Link>
+          {userRole === "customer" ? (
+            <Link className="ghost-button" href="/seller/apply">
+              Join Sellers
+            </Link>
+          ) : null}
+          <Link className="ghost-button notification-button" href="/notifications">
+            Notifications
+            {unreadNotifications > 0 ? (
+              <span className="notification-badge">{unreadNotifications}</span>
+            ) : null}
+          </Link>
+          {userRole === "seller" ? (
+            <Link className="ghost-button" href="/sell">
+              Seller Center
+            </Link>
+          ) : null}
+          {userRole === "admin" ? (
+            <>
+              <Link className="ghost-button" href="/admin/verification">
+                Admin Review
+              </Link>
+              <Link className="ghost-button" href="/admin/disputes">
+                Disputes
+              </Link>
+            </>
+          ) : null}
+        </div>
+      );
+    }
+
+    return (
+      <div className="site-actions">
+        <Link className="ghost-button" href="/auth/login">
+          Log In
+        </Link>
+        <Link className="primary-button" href="/auth/sign-up">
+          Sign Up
+        </Link>
+      </div>
+    );
+  }
+
+  if (isMarketplaceRoute) {
+    return (
+      <header className="site-header site-header--marketplace">
+        <div className="market-topbar">
+          <div className="shell market-topbar__shell">
+            <span>Trade smarter with protected orders and fast seller delivery lanes.</span>
+            <div className="market-topbar__links">
+              {marketplaceTopLinks.map((item) => (
+                <Link key={item.label} href={item.href}>
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="shell nav-shell nav-shell--marketplace">
+          {renderBrand()}
+          {renderPrimaryNavigation()}
+          {renderSessionActions()}
+        </div>
+
+        <div className="market-tools">
+          <div className="shell market-tools__shell">
+            <label className="market-tools__search" htmlFor="market-search-ui-only">
+              <span>Search marketplace</span>
+              <input
+                id="market-search-ui-only"
+                type="search"
+                placeholder="UI-only search (integration next phase)"
+                aria-label="Search marketplace"
+                readOnly
+              />
+            </label>
+
+            <div className="market-tools__controls" aria-label="Marketplace tools">
+              <button className="market-tools__control" type="button">
+                EN / AR
+              </button>
+              <button className="market-tools__control" type="button">
+                USD
+              </button>
+              <button className="market-tools__control" type="button">
+                Categories
+              </button>
+              <button className="market-tools__control" type="button">
+                Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <nav className="market-mobile-tabs" aria-label="Marketplace quick tabs">
+          <div className="shell market-mobile-tabs__shell">
+            {marketplaceMobileTabs.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={isActivePath(item.href) ? "market-mobile-tab market-mobile-tab--active" : "market-mobile-tab"}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      </header>
+    );
+  }
 
   return (
     <header className="site-header">
       <div className="shell nav-shell">
-        <Link className="brand-mark" href="/">
-          <span className="brand-mark__visual">
-            <PlaynixLogo />
-          </span>
-          <span className="brand-mark__copy">
-            <strong>BEN10</strong>
-            <span>Omnitrix Marketplace</span>
-          </span>
-        </Link>
-
-        <nav className="site-nav" aria-label="Primary">
-          {siteNavigation.map((item) => (
-            <Link key={item.href} href={item.href}>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        {user ? (
-          <div className="site-actions site-actions--user">
-            <Link className="user-chip" href="/account">
-              <span className="user-chip__avatar" aria-hidden="true">
-                {avatarUrl ? <img src={avatarUrl} alt="" /> : avatarFallback}
-              </span>
-              <span className="user-chip__copy">
-                <span className="user-chip__name-row">
-                  <strong>{displayName}</strong>
-                  {userRole === "seller" ? <SellerVerifiedBadge /> : null}
-                </span>
-                <span>{roleLabel}</span>
-              </span>
-            </Link>
-            {userRole === "customer" ? (
-              <Link className="ghost-button" href="/seller/apply">
-                Join Sellers
-              </Link>
-            ) : null}
-            <Link className="ghost-button notification-button" href="/notifications">
-              Notifications
-              {unreadNotifications > 0 ? (
-                <span className="notification-badge">{unreadNotifications}</span>
-              ) : null}
-            </Link>
-            {userRole === "seller" ? (
-              <Link className="ghost-button" href="/sell">
-                Seller Center
-              </Link>
-            ) : null}
-            {userRole === "admin" ? (
-              <>
-                <Link className="ghost-button" href="/admin/verification">
-                  Admin Review
-                </Link>
-                <Link className="ghost-button" href="/admin/disputes">
-                  Disputes
-                </Link>
-              </>
-            ) : null}
-          </div>
-        ) : (
-          <div className="site-actions">
-            <Link className="ghost-button" href="/auth/login">
-              Log In
-            </Link>
-            <Link className="primary-button" href="/auth/sign-up">
-              Sign Up
-            </Link>
-          </div>
-        )}
+        {renderBrand()}
+        {renderPrimaryNavigation()}
+        {renderSessionActions()}
       </div>
     </header>
   );

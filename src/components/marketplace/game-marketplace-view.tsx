@@ -203,20 +203,41 @@ export function GameMarketplaceView({
   return (
     <div className="marketplace-game-page">
       <div className="marketplace-game-hero">
-        <div>
+        <div className="marketplace-game-hero__copy">
           <span className="eyebrow-chip">{game.eyebrow}</span>
           <h1>{game.title} Marketplace</h1>
           <p>{game.description}</p>
+          <div className="marketplace-game-hero__chips">
+            {game.categories.map((category) => (
+              <span key={category.slug}>{category.title}</span>
+            ))}
+          </div>
+          <div className="hero-actions">
+            <Link className="primary-button" href="/marketplace">
+              Shop Now
+            </Link>
+            <Link className="ghost-button" href="/support">
+              Buyer Protection
+            </Link>
+          </div>
         </div>
 
-        {canCreateOffers ? (
-          <Link
-            className="primary-button"
-            href={`/sell/offers/new?game=${game.slug}&category=${activeCategory.slug}`}
-          >
-            Add Offer
-          </Link>
-        ) : null}
+        <aside className="marketplace-game-hero__panel" aria-label="Marketplace context">
+          <strong>{activeCategory.title} lane</strong>
+          <p>{activeCategory.description}</p>
+          {canCreateOffers ? (
+            <Link
+              className="ghost-button"
+              href={`/sell/offers/new?game=${game.slug}&category=${activeCategory.slug}`}
+            >
+              Add Offer
+            </Link>
+          ) : (
+            <span className="marketplace-game-hero__hint">
+              Sellers can publish offers directly into this category.
+            </span>
+          )}
+        </aside>
       </div>
 
       <div className="marketplace-tabs">
