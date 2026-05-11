@@ -4,47 +4,30 @@ export function HeroSection() {
   return (
     <section className="hero-section eld-hero">
       <div className="shell shell--hero">
-        <div className="hero-stage">
-          <div className="hero-stage__image">
-            <div className="hero-stage__topbar">
-              <div className="hero-stage__caption">
-                <span className="hero-stage__mini">BEN10 Trading Hub</span>
-                <p>
-                  Buy and sell gaming accounts, currency, and boosting services with protected flows,
-                  fast delivery lanes, and verified seller visibility.
-                </p>
-              </div>
-
-              <div className="hero-tag-row">
-                <span>Buyer Protection</span>
-                <span>Instant Delivery</span>
-                <span>24/7 Support</span>
-              </div>
-            </div>
-
-            <div className="hero-stage__bottom hero-stage__bottom--minimal">
-              <div className="hero-actions">
-                <Link className="primary-button" href="/marketplace">
-                  Shop Now
-                </Link>
-                <Link className="ghost-button" href="/sell">
-                  Start Selling
-                </Link>
-              </div>
+        <div className="eld-hero__layout">
+          <div className="eld-hero__copy">
+            <span className="eyebrow-chip">BEN10 Trading Hub</span>
+            <h1>Buy and sell gaming offers in one trusted marketplace.</h1>
+            <p>
+              Browse accounts, currencies, and services with fast order flow and clear seller visibility
+              built for smooth game trading.
+            </p>
+            <div className="hero-actions">
+              <Link className="primary-button" href="/marketplace">
+                Shop Now
+              </Link>
+              <Link className="ghost-button" href="/sell">
+                Start Selling
+              </Link>
             </div>
           </div>
 
-          <article className="hero-stage__floating hero-stage__floating--left">
-            <span>Live Shield</span>
-            <strong>Secure order rooms for buyer and seller.</strong>
-            <small>Track payment, delivery, and dispute flow in one timeline.</small>
-          </article>
-
-          <article className="hero-stage__floating hero-stage__floating--right">
-            <span>Seller Lane</span>
-            <strong>Publish offers by game and category.</strong>
-            <small>Scale from one listing to a full storefront inside BEN10.</small>
-          </article>
+          <div className="eld-hero__media" aria-label="BEN10 hero showcase">
+            <img
+              src="https://i.pinimg.com/originals/4e/b0/4e/4eb04e88b652e927060d526d1e5da5a8.jpg"
+              alt="Ben10 inspired gaming marketplace hero art"
+            />
+          </div>
         </div>
       </div>
     </section>

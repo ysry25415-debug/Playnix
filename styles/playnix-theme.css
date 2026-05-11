@@ -2,39 +2,39 @@
   color-scheme: dark;
 
   /* Base surfaces */
-  --playnix-bg-canvas: #040904;
-  --playnix-bg-elevated: #081108;
-  --playnix-bg-surface: #0f1a0f;
-  --playnix-bg-surface-strong: #162616;
-  --playnix-bg-inset: #1f331f;
+  --playnix-bg-canvas: #0e0e11;
+  --playnix-bg-elevated: #14131a;
+  --playnix-bg-surface: #1e1f28;
+  --playnix-bg-surface-strong: #282836;
+  --playnix-bg-inset: #323141;
 
   /* Accent scale */
-  --playnix-red-900: #0a2b10;
-  --playnix-red-800: #12441b;
-  --playnix-red-700: #1f6f2b;
-  --playnix-red-600: #32a744;
-  --playnix-red-500: #57d63a;
-  --playnix-red-400: #95f779;
-  --playnix-accent-rgb: 87, 214, 58;
-  --playnix-accent-soft-rgb: 149, 247, 121;
+  --playnix-red-900: #3f2c07;
+  --playnix-red-800: #7d560c;
+  --playnix-red-700: #b97b0d;
+  --playnix-red-600: #fea900;
+  --playnix-red-500: #ffc950;
+  --playnix-red-400: #fbd684;
+  --playnix-accent-rgb: 71, 131, 255;
+  --playnix-accent-soft-rgb: 119, 163, 252;
 
   /* Text */
-  --playnix-text-primary: #efffea;
-  --playnix-text-secondary: #b9d8b1;
-  --playnix-text-muted: #7ea378;
-  --playnix-text-on-accent: #071406;
+  --playnix-text-primary: #ffffff;
+  --playnix-text-secondary: #a8aab3;
+  --playnix-text-muted: #898a93;
+  --playnix-text-on-accent: #14131a;
 
   /* Borders */
-  --playnix-border-subtle: #2d4b2b;
-  --playnix-border-strong: #3c6536;
-  --playnix-border-accent: #32a744;
-  --playnix-divider: #132113;
+  --playnix-border-subtle: #2a2a37;
+  --playnix-border-strong: #434252;
+  --playnix-border-accent: #4783ff;
+  --playnix-divider: #2a2a37;
 
   /* Glow */
-  --playnix-glow-red-soft: #57d63a26;
-  --playnix-glow-red-medium: #57d63a4d;
-  --playnix-glow-red-strong: #8ff76d80;
-  --playnix-glow-red-core: #b5ff9e;
+  --playnix-glow-red-soft: #4783ff1f;
+  --playnix-glow-red-medium: #4783ff42;
+  --playnix-glow-red-strong: #4783ff66;
+  --playnix-glow-red-core: #77a3fc;
 
   /* Semantic */
   --playnix-button-primary-bg: var(--playnix-red-500);

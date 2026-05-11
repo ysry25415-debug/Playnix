@@ -11,12 +11,6 @@ import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 
-const marketplaceTopLinks = [
-  { href: "/support", label: "Buyer Protection" },
-  { href: "/support", label: "Fast Delivery" },
-  { href: "/support", label: "24/7 Support" },
-];
-
 const marketplaceMobileTabs = [
   { href: "/", label: "Home" },
   { href: "/marketplace", label: "Marketplace" },
@@ -29,6 +23,7 @@ export function SiteHeader() {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [isSearchCompact, setIsSearchCompact] = useState(false);
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -125,6 +120,19 @@ export function SiteHeader() {
       authListener.subscription.unsubscribe();
     };
   }, [user?.id]);
+
+  useEffect(() => {
+    function handleScroll() {
+      setIsSearchCompact(window.scrollY > 42);
+    }
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const roleLabel =
     userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : userRole === "customer" ? "Customer" : "Loading role...";
@@ -225,53 +233,25 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="site-header site-header--marketplace eld-header">
-      <div className="market-topbar">
-        <div className="shell market-topbar__shell">
-          <span>Trade smarter with protected orders and fast seller delivery lanes.</span>
-          <div className="market-topbar__links">
-            {marketplaceTopLinks.map((item) => (
-              <Link key={item.label} href={item.href}>
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
-
+    <header className={isSearchCompact ? "site-header site-header--marketplace eld-header eld-header--compact" : "site-header site-header--marketplace eld-header"}>
       <div className="shell nav-shell nav-shell--marketplace">
         {renderBrand()}
         {renderPrimaryNavigation()}
         {renderSessionActions()}
       </div>
 
-      <div className="market-tools">
+      <div className={isSearchCompact ? "market-tools market-tools--compact" : "market-tools"}>
         <div className="shell market-tools__shell">
           <label className="market-tools__search" htmlFor="market-search-ui-only">
             <span>Search BEN10 platform</span>
             <input
               id="market-search-ui-only"
               type="search"
-              placeholder="UI-only search (integration next phase)"
+              placeholder="Search offers, games, and sellers"
               aria-label="Search BEN10 platform"
               readOnly
             />
           </label>
-
-          <div className="market-tools__controls" aria-label="Platform tools">
-            <button className="market-tools__control" type="button">
-              EN / AR
-            </button>
-            <button className="market-tools__control" type="button">
-              USD
-            </button>
-            <button className="market-tools__control" type="button">
-              All Games
-            </button>
-            <button className="market-tools__control" type="button">
-              Filters
-            </button>
-          </div>
         </div>
       </div>
 
