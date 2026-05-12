@@ -31,7 +31,7 @@
 .eld-header .site-nav__link {
   min-height: 40px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: 0;
   color: var(--eld-text-secondary);
   border: 1px solid transparent;
   font-size: 0.88rem;
@@ -50,8 +50,13 @@
   background: linear-gradient(180deg, var(--eld-yellow-1), var(--eld-yellow-2));
 }
 
+.eld-header .primary-button,
+.eld-header .ghost-button {
+  border-radius: 0;
+}
+
 .eld-header .user-chip {
-  border-radius: 999px;
+  border-radius: 0;
   border-color: rgba(71, 131, 255, 0.55);
   background: rgba(40, 40, 54, 0.96);
 }
@@ -74,7 +79,7 @@
 }
 
 .eld-header .market-tools__search input {
-  border-radius: 999px;
+  border-radius: 0;
   border-color: var(--eld-alt-2);
   background: rgba(30, 31, 40, 0.96);
   min-height: 38px;
@@ -95,7 +100,7 @@
 }
 
 .eld-header .market-mobile-tab {
-  border-radius: 999px;
+  border-radius: 0;
   border-color: var(--eld-alt-2);
   color: var(--eld-text-secondary);
 }
