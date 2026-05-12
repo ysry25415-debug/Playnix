@@ -3,27 +3,7 @@
   padding-bottom: 28px;
 }
 
-.eld-hero .eld-hero__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.95fr);
-  gap: 18px;
-  align-items: stretch;
-}
-
-.eld-hero .eld-hero__copy {
-  padding: 22px;
-  border: 1px solid rgba(67, 66, 82, 0.58);
-  border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(71, 131, 255, 0.1), rgba(30, 31, 40, 0.86) 38%),
-    rgba(30, 31, 40, 0.86);
-  display: grid;
-  align-content: center;
-  gap: 14px;
-  box-shadow: var(--eld-shadow-1);
-}
-
-.eld-hero .eld-hero__copy h1 {
+.eld-hero .eld-hero__overlay h1 {
   margin: 0;
   max-width: 16ch;
   font-size: clamp(2rem, 4.6vw, 3.4rem);
@@ -32,7 +12,7 @@
   text-transform: none;
 }
 
-.eld-hero .eld-hero__copy p {
+.eld-hero .eld-hero__overlay p {
   margin: 0;
   max-width: 54ch;
   color: var(--eld-text-secondary);
@@ -40,8 +20,9 @@
 }
 
 .eld-hero .eld-hero__media {
+  position: relative;
   border: 1px solid rgba(67, 66, 82, 0.58);
-  border-radius: 14px;
+  border-radius: 0;
   overflow: hidden;
   background: rgba(30, 31, 40, 0.86);
   box-shadow: var(--eld-shadow-2);
@@ -50,19 +31,42 @@
 .eld-hero .eld-hero__media img {
   width: 100%;
   height: 100%;
-  min-height: 420px;
+  min-height: 520px;
   object-fit: cover;
   object-position: center;
   display: block;
 }
 
+.eld-hero .eld-hero__overlay {
+  position: absolute;
+  left: 28px;
+  bottom: 26px;
+  width: min(560px, calc(100% - 56px));
+  padding: 18px;
+  border: 1px solid rgba(67, 66, 82, 0.7);
+  border-radius: 0;
+  background:
+    linear-gradient(180deg, rgba(30, 31, 40, 0.72), rgba(30, 31, 40, 0.92)),
+    rgba(30, 31, 40, 0.92);
+  display: grid;
+  gap: 12px;
+}
+
+.eld-hero .primary-button,
+.eld-hero .ghost-button,
+.eld-hero .eyebrow-chip {
+  border-radius: 0;
+}
+
 @media (max-width: 1080px) {
-  .eld-hero .eld-hero__layout {
-    grid-template-columns: 1fr;
+  .eld-hero .eld-hero__media img {
+    min-height: 460px;
   }
 
-  .eld-hero .eld-hero__media img {
-    min-height: 360px;
+  .eld-hero .eld-hero__overlay {
+    width: min(520px, calc(100% - 40px));
+    left: 20px;
+    bottom: 20px;
   }
 }
 
@@ -72,22 +76,21 @@
     padding-bottom: 20px;
   }
 
-  .eld-hero .eld-hero__copy,
-  .eld-hero .eld-hero__media {
-    border-radius: 10px;
-  }
-
-  .eld-hero .eld-hero__copy {
+  .eld-hero .eld-hero__overlay {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
     padding: 16px;
     gap: 12px;
   }
 
-  .eld-hero .eld-hero__copy h1 {
+  .eld-hero .eld-hero__overlay h1 {
     font-size: clamp(1.62rem, 7vw, 2.3rem);
     max-width: none;
   }
 
   .eld-hero .eld-hero__media img {
-    min-height: 280px;
+    min-height: 360px;
   }
 }
