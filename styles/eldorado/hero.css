@@ -55,7 +55,66 @@
 .eld-hero .primary-button,
 .eld-hero .ghost-button,
 .eld-hero .eyebrow-chip {
-  border-radius: 0;
+  border-radius: 999px;
+}
+
+.eld-hero .primary-button,
+.eld-hero .ghost-button {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--eld-liquid-glass-border);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  transition:
+    transform 220ms cubic-bezier(0.34, 1.2, 0.64, 1),
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    color 220ms ease,
+    background 220ms ease;
+}
+
+.eld-hero .primary-button::before,
+.eld-hero .ghost-button::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  top: 1px;
+  height: 48%;
+  border-radius: 999px 999px 18px 18px / 999px 999px 10px 10px;
+  background: linear-gradient(180deg, var(--eld-liquid-reflect-start), var(--eld-liquid-reflect-end));
+  pointer-events: none;
+}
+
+.eld-hero .primary-button {
+  background: var(--eld-liquid-pill-bg);
+  color: var(--eld-liquid-pill-text);
+  box-shadow:
+    var(--eld-liquid-pill-shadow),
+    inset 0 1px 1px rgba(255, 255, 255, 0.85),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.18);
+}
+
+.eld-hero .ghost-button {
+  background: var(--eld-liquid-glass-bg);
+  color: var(--eld-liquid-ghost-text);
+  box-shadow:
+    var(--eld-liquid-shadow),
+    inset 0 1px 2px var(--eld-liquid-glass-highlight),
+    inset 0 -1px 2px var(--eld-liquid-glass-caustic);
+}
+
+.eld-hero .primary-button:hover,
+.eld-hero .primary-button:focus-visible,
+.eld-hero .ghost-button:hover,
+.eld-hero .ghost-button:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.52);
+}
+
+.eld-hero .primary-button:active,
+.eld-hero .ghost-button:active {
+  transform: scale(0.96);
 }
 
 @media (max-width: 1080px) {
