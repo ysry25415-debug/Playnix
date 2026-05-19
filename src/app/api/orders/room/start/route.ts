@@ -67,5 +67,14 @@ export async function POST(request: NextRequest) {
     actionHref: `/orders/${orderId}`,
   });
 
+  await createUserNotification(adminClient, {
+    recipientId: context.order.seller_id,
+    actorId: context.order.buyer_id,
+    orderId,
+    title: "Delivery room opened",
+    body: "You opened this order room successfully. Buyer can now complete payment hold and continue delivery.",
+    actionHref: `/orders/${orderId}`,
+  });
+
   return NextResponse.json({ ok: true, deadline: deadline.toISOString() });
 }

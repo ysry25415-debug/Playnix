@@ -163,6 +163,15 @@ export async function POST(request: NextRequest) {
     actionHref: `/orders/${nextOrderId}`,
   });
 
+  await createUserNotification(adminClient, {
+    recipientId: user.id,
+    actorId: normalizedOffer.seller_id,
+    orderId: nextOrderId,
+    title: "Order placed successfully",
+    body: "Your order was created and logged. Waiting for the seller to open the delivery room.",
+    actionHref: `/orders/${nextOrderId}`,
+  });
+
   return NextResponse.json({
     ok: true,
     orderId: nextOrderId,

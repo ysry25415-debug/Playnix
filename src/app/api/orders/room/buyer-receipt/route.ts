@@ -118,6 +118,15 @@ export async function POST(request: NextRequest) {
     actionHref: `/orders/${orderId}`,
   });
 
+  await createUserNotification(adminClient, {
+    recipientId: context.order.buyer_id,
+    actorId: context.order.seller_id,
+    orderId,
+    title: "Dispute submitted",
+    body: "Your dispute was logged successfully. Funds remain held until admin resolves this order.",
+    actionHref: `/orders/${orderId}`,
+  });
+
   const serviceClient = getServiceRoleClient();
   if (serviceClient) {
     const { data: admins } = await serviceClient.from("profiles").select("id").eq("role", "admin");

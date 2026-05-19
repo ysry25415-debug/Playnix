@@ -31,7 +31,7 @@
 .eld-header .site-nav__link {
   min-height: 40px;
   padding: 0 12px;
-  border-radius: 0;
+  border-radius: 12px;
   color: var(--eld-text-secondary);
   border: 1px solid transparent;
   font-size: 0.88rem;
@@ -46,8 +46,8 @@
 
 .eld-header .site-nav__link--active {
   color: #14131a;
-  border-color: var(--eld-yellow-1);
-  background: linear-gradient(180deg, var(--eld-yellow-1), var(--eld-yellow-2));
+  border-color: #95f779;
+  background: linear-gradient(180deg, #95f779, #57d63a);
 }
 
 .eld-header .primary-button,
@@ -108,7 +108,7 @@
 }
 
 .eld-header .user-chip {
-  border-radius: 0;
+  border-radius: 14px;
   border-color: rgba(71, 131, 255, 0.55);
   background: rgba(40, 40, 54, 0.96);
 }
@@ -131,7 +131,7 @@
 }
 
 .eld-header .market-tools__search input {
-  border-radius: 0;
+  border-radius: 12px;
   border-color: var(--eld-alt-2);
   background: rgba(30, 31, 40, 0.96);
   min-height: 38px;
@@ -159,8 +159,8 @@
 
 .eld-header .market-mobile-tab--active {
   color: #14131a;
-  border-color: var(--eld-yellow-1);
-  background: linear-gradient(180deg, var(--eld-yellow-1), var(--eld-yellow-2));
+  border-color: #95f779;
+  background: linear-gradient(180deg, #95f779, #57d63a);
 }
 
 .eld-header--compact .nav-shell--marketplace {

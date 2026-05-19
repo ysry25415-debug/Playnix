@@ -67,5 +67,14 @@ export async function POST(request: NextRequest) {
     actionHref: `/orders/${orderId}`,
   });
 
+  await createUserNotification(adminClient, {
+    recipientId: context.order.seller_id,
+    actorId: context.order.buyer_id,
+    orderId,
+    title: "Delivery status updated",
+    body: "You marked this order as delivered. Waiting for buyer confirmation or dispute.",
+    actionHref: `/orders/${orderId}`,
+  });
+
   return NextResponse.json({ ok: true });
 }

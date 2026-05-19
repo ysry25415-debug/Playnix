@@ -8,24 +8,24 @@
   --eld-text-primary: #ffffff;
   --eld-text-secondary: #a8aab3;
   --eld-text-link: #4783ff;
-  --eld-yellow-1: #ffc950;
-  --eld-yellow-2: #fea900;
-  --eld-yellow-3: #ff8d00;
+  --eld-yellow-1: #95f779;
+  --eld-yellow-2: #57d63a;
+  --eld-yellow-3: #32a744;
   --eld-marine: #4783ff;
   --eld-emerald: #00e4c9;
   --eld-shadow-1: 0 2px 4px rgba(9, 9, 11, 0.05), 0 12px 8px rgba(9, 9, 11, 0.02);
   --eld-shadow-2: 0 2px 4px rgba(9, 9, 11, 0.1), 0 12px 32px rgba(9, 9, 11, 0.05);
 
   /* Liquid button system (inspired by provided Apple glass snippet) */
-  --eld-liquid-glass-bg: rgba(255, 255, 255, 0.16);
-  --eld-liquid-glass-border: rgba(255, 255, 255, 0.34);
+  --eld-liquid-glass-bg: rgba(87, 214, 58, 0.16);
+  --eld-liquid-glass-border: rgba(149, 247, 121, 0.45);
   --eld-liquid-glass-highlight: rgba(255, 255, 255, 0.74);
-  --eld-liquid-glass-caustic: rgba(255, 255, 255, 0.08);
+  --eld-liquid-glass-caustic: rgba(87, 214, 58, 0.15);
   --eld-liquid-reflect-start: rgba(255, 255, 255, 0.48);
   --eld-liquid-reflect-end: rgba(255, 255, 255, 0);
-  --eld-liquid-shadow: 0 10px 24px rgba(0, 0, 0, 0.26), 0 2px 6px rgba(0, 0, 0, 0.18);
-  --eld-liquid-pill-bg: rgba(255, 255, 255, 0.78);
-  --eld-liquid-pill-text: rgba(0, 0, 0, 0.92);
-  --eld-liquid-pill-shadow: 0 4px 12px rgba(0, 0, 0, 0.14), inset 0 1px 1px rgba(255, 255, 255, 0.8);
-  --eld-liquid-ghost-text: rgba(255, 255, 255, 0.92);
+  --eld-liquid-shadow: 0 10px 24px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+  --eld-liquid-pill-bg: rgba(149, 247, 121, 0.92);
+  --eld-liquid-pill-text: #071406;
+  --eld-liquid-pill-shadow: 0 4px 12px rgba(0, 0, 0, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.82);
+  --eld-liquid-ghost-text: #eaffdc;
 }

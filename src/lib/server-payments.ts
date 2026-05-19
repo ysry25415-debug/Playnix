@@ -70,5 +70,14 @@ export async function markOrderPaymentHeldFromStripe(
     actionHref: `/orders/${orderId}`,
   });
 
+  await createUserNotification(adminClient, {
+    recipientId: context.order.buyer_id,
+    actorId: context.order.seller_id,
+    orderId,
+    title: "Payment hold is active",
+    body: "Your payment was confirmed and is now held safely on the platform until delivery is completed.",
+    actionHref: `/orders/${orderId}`,
+  });
+
   return { ok: true };
 }

@@ -24,6 +24,7 @@ type TransactionRecord = {
   room: Pick<OrderTradeRoomRow, "payment_status" | "resolution_status" | "room_status" | "updated_at"> | null;
   counterpartyName: string;
   kind: "purchase" | "sale";
+  activityAt: string;
 };
 
 function formatPaymentStatus(status: OrderTradeRoomRow["payment_status"] | null | undefined) {
@@ -156,9 +157,10 @@ export function TransactionHistoryPanel({
             room: roomByOrderId.get(order.id) ?? null,
             counterpartyName,
             kind: isSale ? "sale" : "purchase",
+            activityAt: roomByOrderId.get(order.id)?.updated_at ?? order.created_at,
           } satisfies TransactionRecord;
         })
-        .sort((a, b) => new Date(b.order.created_at).getTime() - new Date(a.order.created_at).getTime());
+        .sort((a, b) => new Date(b.activityAt).getTime() - new Date(a.activityAt).getTime());
 
       setRecords(nextRecords);
       setIsLoading(false);
@@ -217,7 +219,7 @@ export function TransactionHistoryPanel({
 
               <div className="transaction-card__meta">
                 <span>${Number(item.order.price_usd || 0).toFixed(2)}</span>
-                <span>{new Date(item.order.created_at).toLocaleString()}</span>
+                <span>Last activity: {new Date(item.activityAt).toLocaleString()}</span>
               </div>
 
               <div className="transaction-card__grid">
