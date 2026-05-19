@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function HeroSection() {
   return (
-    <section className="hero-section eld-hero">
+    <section className="eld-hero">
       <div className="shell shell--hero">
         <div className="eld-hero__media" aria-label="BEN10 hero showcase">
           <img

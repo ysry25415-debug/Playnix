@@ -160,12 +160,16 @@ export function SiteHeader() {
 
   function renderPrimaryNavigation() {
     return (
-      <nav className="site-nav" aria-label="Primary">
+      <nav className="eld-header__nav" aria-label="Primary">
         {siteNavigation.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={isActivePath(item.href) ? "site-nav__link site-nav__link--active" : "site-nav__link"}
+            className={
+              isActivePath(item.href)
+                ? "eld-header__nav-link eld-header__nav-link--active"
+                : "eld-header__nav-link"
+            }
           >
             {item.label}
           </Link>
@@ -177,7 +181,7 @@ export function SiteHeader() {
   function renderSessionActions() {
     if (user) {
       return (
-        <div className="site-actions site-actions--user">
+        <div className="eld-header__actions eld-header__actions--user">
           <Link className="user-chip" href="/account">
             <span className="user-chip__avatar" aria-hidden="true">
               {avatarUrl ? <img src={avatarUrl} alt="" /> : avatarFallback}
@@ -221,7 +225,7 @@ export function SiteHeader() {
     }
 
     return (
-      <div className="site-actions">
+      <div className="eld-header__actions">
         <Link className="ghost-button" href="/auth/login">
           Log In
         </Link>
@@ -233,16 +237,16 @@ export function SiteHeader() {
   }
 
   return (
-    <header className={isSearchCompact ? "site-header site-header--marketplace eld-header eld-header--compact" : "site-header site-header--marketplace eld-header"}>
-      <div className="shell nav-shell nav-shell--marketplace">
+    <header className={isSearchCompact ? "eld-header eld-header--compact" : "eld-header"}>
+      <div className="shell eld-header__main">
         {renderBrand()}
         {renderPrimaryNavigation()}
         {renderSessionActions()}
       </div>
 
-      <div className={isSearchCompact ? "market-tools market-tools--compact" : "market-tools"}>
-        <div className="shell market-tools__shell">
-          <label className="market-tools__search" htmlFor="market-search-ui-only">
+      <div className={isSearchCompact ? "eld-header__tools eld-header__tools--compact" : "eld-header__tools"}>
+        <div className="shell eld-header__tools-shell">
+          <label className="eld-header__search" htmlFor="market-search-ui-only">
             <span>Search BEN10 platform</span>
             <input
               id="market-search-ui-only"
@@ -255,13 +259,17 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <nav className="market-mobile-tabs" aria-label="Platform quick tabs">
-        <div className="shell market-mobile-tabs__shell">
+      <nav className="eld-header__mobile-tabs" aria-label="Platform quick tabs">
+        <div className="shell eld-header__mobile-tabs-shell">
           {marketplaceMobileTabs.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={isActivePath(item.href) ? "market-mobile-tab market-mobile-tab--active" : "market-mobile-tab"}
+              className={
+                isActivePath(item.href)
+                  ? "eld-header__mobile-tab eld-header__mobile-tab--active"
+                  : "eld-header__mobile-tab"
+              }
             >
               {item.label}
             </Link>
