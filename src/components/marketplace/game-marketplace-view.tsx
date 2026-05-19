@@ -22,11 +22,13 @@ import { supabase } from "@/lib/supabase-client";
 type GameMarketplaceViewProps = {
   game: MarketplaceGame;
   activeCategorySlug: string;
+  searchQuery?: string;
 };
 
 export function GameMarketplaceView({
   game,
   activeCategorySlug,
+  searchQuery = "",
 }: GameMarketplaceViewProps) {
   const router = useRouter();
   const [offers, setOffers] = useState<OfferWithImagesRow[]>([]);
@@ -191,14 +193,36 @@ export function GameMarketplaceView({
   }
 
   const canCreateOffers = viewerRole === "seller" || viewerRole === "admin";
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
 
   const categoryLinks = useMemo(() => {
+    const querySuffix = normalizedSearchQuery ? `&q=${encodeURIComponent(searchQuery.trim())}` : "";
+
     return game.categories.map((category) => ({
       ...category,
-      href: `/marketplace/${game.slug}?category=${category.slug}`,
+      href: `/marketplace/${game.slug}?category=${category.slug}${querySuffix}`,
       isActive: category.slug === activeCategory.slug,
     }));
-  }, [activeCategory.slug, game.categories, game.slug]);
+  }, [activeCategory.slug, game.categories, game.slug, normalizedSearchQuery, searchQuery]);
+
+  const filteredOffers = useMemo(() => {
+    if (!normalizedSearchQuery) {
+      return offers;
+    }
+
+    return offers.filter((offer) => {
+      const searchableText = [
+        offer.title,
+        offer.description,
+        offer.delivery_time,
+        offer.delivery_mode,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(normalizedSearchQuery);
+    });
+  }, [normalizedSearchQuery, offers]);
 
   return (
     <div className="marketplace-game-page">
@@ -258,9 +282,13 @@ export function GameMarketplaceView({
 
       {isLoading ? (
         <p>Loading offers...</p>
-      ) : offers.length === 0 ? (
+      ) : filteredOffers.length === 0 ? (
         <div className="marketplace-empty">
-          <strong>No live offers in {activeCategory.title} yet.</strong>
+          <strong>
+            {normalizedSearchQuery
+              ? `No offers match "${searchQuery}" in ${activeCategory.title}.`
+              : `No live offers in ${activeCategory.title} yet.`}
+          </strong>
           <span>
             {canCreateOffers
               ? "You can be the first seller to publish in this section."
@@ -269,7 +297,7 @@ export function GameMarketplaceView({
         </div>
       ) : (
         <div className="marketplace-offer-grid">
-          {offers.map((offer) => {
+          {filteredOffers.map((offer) => {
             const primaryImage = getPrimaryOfferImage(offer.offer_images);
 
             return (

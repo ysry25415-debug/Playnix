@@ -9,10 +9,10 @@ export default async function GameMarketplacePage({
   searchParams,
 }: {
   params: Promise<{ gameSlug: string }>;
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; q?: string }>;
 }) {
   const { gameSlug } = await params;
-  const { category } = await searchParams;
+  const { category, q } = await searchParams;
 
   const game = getMarketplaceGame(gameSlug);
   if (!game) {
@@ -27,7 +27,7 @@ export default async function GameMarketplacePage({
       <main className="module-page marketplace-game-shell">
         <div className="shell">
           <section className="module-page__shell">
-            <GameMarketplaceView game={game} activeCategorySlug={initialCategory} />
+            <GameMarketplaceView game={game} activeCategorySlug={initialCategory} searchQuery={q ?? ""} />
           </section>
         </div>
       </main>

@@ -15,8 +15,8 @@
   --playnix-red-600: #fea900;
   --playnix-red-500: #ffc950;
   --playnix-red-400: #fbd684;
-  --playnix-accent-rgb: 71, 131, 255;
-  --playnix-accent-soft-rgb: 119, 163, 252;
+  --playnix-accent-rgb: 87, 214, 58;
+  --playnix-accent-soft-rgb: 149, 247, 121;
 
   /* Text */
   --playnix-text-primary: #ffffff;
@@ -27,18 +27,18 @@
   /* Borders */
   --playnix-border-subtle: #2a2a37;
   --playnix-border-strong: #434252;
-  --playnix-border-accent: #4783ff;
+  --playnix-border-accent: #57d63a;
   --playnix-divider: #2a2a37;
 
   /* Glow */
-  --playnix-glow-red-soft: #4783ff1f;
-  --playnix-glow-red-medium: #4783ff42;
-  --playnix-glow-red-strong: #4783ff66;
-  --playnix-glow-red-core: #77a3fc;
+  --playnix-glow-red-soft: rgba(87, 214, 58, 0.2);
+  --playnix-glow-red-medium: rgba(87, 214, 58, 0.34);
+  --playnix-glow-red-strong: rgba(87, 214, 58, 0.48);
+  --playnix-glow-red-core: #95f779;
 
   /* Semantic */
-  --playnix-button-primary-bg: var(--playnix-red-500);
-  --playnix-button-primary-hover: var(--playnix-red-600);
+  --playnix-button-primary-bg: #57d63a;
+  --playnix-button-primary-hover: #3cc330;
   --playnix-button-primary-text: var(--playnix-text-on-accent);
   --playnix-link-accent: var(--playnix-red-400);
   --playnix-focus-ring: var(--playnix-glow-red-strong);

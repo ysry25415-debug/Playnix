@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type User } from "@supabase/supabase-js";
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 
 import { siteNavigation } from "@/lib/homepage-data";
 import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
+import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
@@ -20,10 +21,13 @@ const marketplaceMobileTabs = [
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isSearchCompact, setIsSearchCompact] = useState(false);
+  const [searchText, setSearchText] = useState("");
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -134,6 +138,10 @@ export function SiteHeader() {
     };
   }, []);
 
+  useEffect(() => {
+    setSearchText(searchParams?.get("q") ?? "");
+  }, [searchParams]);
+
   const roleLabel =
     userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : userRole === "customer" ? "Customer" : "Loading role...";
   function isActivePath(href: string) {
@@ -236,6 +244,37 @@ export function SiteHeader() {
     );
   }
 
+  function handleHeaderSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const query = searchText.trim();
+    const nextParams = new URLSearchParams();
+
+    if (query) {
+      nextParams.set("q", query);
+    }
+
+    const isGameMarketplacePath =
+      typeof pathname === "string" &&
+      pathname.startsWith("/marketplace/") &&
+      pathname !== "/marketplace";
+
+    if (isGameMarketplacePath) {
+      const activeCategory = searchParams?.get("category");
+      if (activeCategory) {
+        nextParams.set("category", activeCategory);
+      }
+    }
+
+    const targetPath = isGameMarketplacePath ? pathname : "/marketplace";
+    const targetHref = nextParams.toString()
+      ? `${targetPath}?${nextParams.toString()}`
+      : targetPath;
+
+    triggerPageLoader();
+    router.push(targetHref);
+  }
+
   return (
     <header className={isSearchCompact ? "eld-header eld-header--compact" : "eld-header"}>
       <div className="shell eld-header__main">
@@ -246,16 +285,17 @@ export function SiteHeader() {
 
       <div className={isSearchCompact ? "eld-header__tools eld-header__tools--compact" : "eld-header__tools"}>
         <div className="shell eld-header__tools-shell">
-          <label className="eld-header__search" htmlFor="market-search-ui-only">
-            <span>Search BEN10 platform</span>
+          <form className="eld-header__search" onSubmit={handleHeaderSearchSubmit}>
+            <label htmlFor="market-search-ui-only">Search BEN10 platform</label>
             <input
               id="market-search-ui-only"
               type="search"
               placeholder="Search offers, games, and sellers"
               aria-label="Search BEN10 platform"
-              readOnly
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
             />
-          </label>
+          </form>
         </div>
       </div>
 

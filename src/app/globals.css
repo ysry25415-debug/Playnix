@@ -575,7 +575,7 @@ textarea {
 .primary-button {
   border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.65);
   color: var(--playnix-button-primary-text);
-  background: linear-gradient(180deg, var(--playnix-red-400), var(--playnix-button-primary-bg));
+  background: linear-gradient(180deg, #c9ffa3, var(--playnix-button-primary-bg));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 0 0 1px rgba(var(--playnix-accent-rgb), 0.24),
@@ -585,20 +585,36 @@ textarea {
 .primary-button:hover,
 .primary-button:focus-visible {
   transform: translateY(-1px);
-  background: linear-gradient(180deg, #c5ff9d, var(--playnix-button-primary-hover));
+  background: linear-gradient(180deg, #d9ffb9, var(--playnix-button-primary-hover));
+}
+
+button,
+.primary-button,
+.ghost-button,
+.admin-tab,
+.admin-refresh-button,
+.admin-approve-button,
+.admin-reject-button,
+.account-logout-button {
+  border-radius: 999px !important;
 }
 
 .ghost-button {
-  color: var(--playnix-text-primary);
-  border: 1px solid rgba(49, 66, 86, 0.95);
-  background: rgba(16, 23, 34, 0.82);
+  color: #ecffe3;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.58);
+  background: linear-gradient(180deg, rgba(48, 120, 36, 0.48), rgba(23, 66, 18, 0.7));
+  box-shadow:
+    inset 0 1px 0 rgba(235, 255, 224, 0.25),
+    0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
 .ghost-button:hover,
 .ghost-button:focus-visible {
   transform: translateY(-1px);
-  border-color: rgba(var(--playnix-accent-soft-rgb), 0.42);
-  box-shadow: 0 0 24px rgba(var(--playnix-accent-rgb), 0.1);
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(235, 255, 224, 0.32),
+    0 0 24px rgba(var(--playnix-accent-rgb), 0.22);
 }
 
 .hero-section {
@@ -1607,16 +1623,17 @@ textarea {
 }
 
 .admin-reject-button {
-  border-color: rgba(255, 95, 95, 0.45);
-  color: #ffd6d6;
-  background: rgba(45, 14, 14, 0.72);
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.58);
+  color: #ecffe3;
+  background: linear-gradient(180deg, rgba(48, 120, 36, 0.48), rgba(23, 66, 18, 0.7));
 }
 
 .admin-reject-button:hover,
 .admin-reject-button:focus-visible {
-  border-color: rgba(255, 118, 118, 0.7);
-  background: rgba(62, 14, 14, 0.9);
-  box-shadow: 0 0 20px rgba(255, 95, 95, 0.2);
+  border-color: rgba(var(--playnix-accent-soft-rgb), 0.75);
+  box-shadow:
+    inset 0 1px 0 rgba(235, 255, 224, 0.32),
+    0 0 24px rgba(var(--playnix-accent-rgb), 0.22);
 }
 
 .module-page__shell {

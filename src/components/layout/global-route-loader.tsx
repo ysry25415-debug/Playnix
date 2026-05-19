@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { PageLoader } from "@/components/shared/page-loader";
 import { PAGE_LOADER_START_EVENT } from "@/lib/page-loader-events";
 
-const MINIMUM_VISIBLE_MS = 1000;
+const MINIMUM_VISIBLE_MS = 150;
 
 export function GlobalRouteLoader() {
   const pathname = usePathname();

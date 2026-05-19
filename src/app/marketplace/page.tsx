@@ -3,7 +3,29 @@ import Link from "next/link";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { marketplaceGames } from "@/lib/marketplace-data";
 
-export default function MarketplacePage() {
+export default async function MarketplacePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const normalizedQuery = (q ?? "").trim().toLowerCase();
+
+  const filteredGames = normalizedQuery
+    ? marketplaceGames.filter((game) => {
+        const searchableText = [
+          game.title,
+          game.eyebrow,
+          game.description,
+          ...game.categories.map((category) => `${category.title} ${category.description}`),
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return searchableText.includes(normalizedQuery);
+      })
+    : marketplaceGames;
+
   return (
     <AuthGuard>
       <main className="module-page marketplace-hub-page">
@@ -31,7 +53,7 @@ export default function MarketplacePage() {
                 <strong>Live market lanes</strong>
                 <p>Jump directly into game-first surfaces shaped for accounts, currency, and services.</p>
                 <div className="marketplace-hub-hero__chips">
-                  {marketplaceGames.map((game) => (
+                  {filteredGames.map((game) => (
                     <Link key={game.slug} href={`/marketplace/${game.slug}`}>
                       {game.title}
                     </Link>
@@ -41,7 +63,7 @@ export default function MarketplacePage() {
             </div>
 
             <div className="marketplace-hub-grid" id="market-hub-grid">
-              {marketplaceGames.map((game) => (
+              {filteredGames.map((game) => (
                 <Link key={game.slug} href={`/marketplace/${game.slug}`} className="marketplace-hub-card">
                   <span className="section-eyebrow">{game.eyebrow}</span>
                   <h2>{game.title}</h2>
@@ -54,6 +76,13 @@ export default function MarketplacePage() {
                 </Link>
               ))}
             </div>
+
+            {normalizedQuery && filteredGames.length === 0 ? (
+              <div className="marketplace-empty">
+                <strong>No game markets match "{q}".</strong>
+                <span>Try another keyword such as the game name or category.</span>
+              </div>
+            ) : null}
           </section>
         </div>
       </main>
