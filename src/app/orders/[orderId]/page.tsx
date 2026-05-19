@@ -1,5 +1,8 @@
+import { Suspense } from "react";
+
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { OrderRoom } from "@/components/orders/order-room";
+import { PageLoader } from "@/components/shared/page-loader";
 
 export default async function OrderRoomPage({
   params,
@@ -10,7 +13,16 @@ export default async function OrderRoomPage({
 
   return (
     <AuthGuard>
-      <OrderRoom orderId={orderId} />
+      <Suspense
+        fallback={
+          <PageLoader
+            label="Opening delivery room..."
+            hint="BEN10 is preparing the live order room and payment state."
+          />
+        }
+      >
+        <OrderRoom orderId={orderId} />
+      </Suspense>
     </AuthGuard>
   );
 }

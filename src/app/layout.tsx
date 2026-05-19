@@ -36,7 +36,9 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <GlobalRouteLoader />
         </Suspense>
-        <SiteHeader />
+        <Suspense fallback={null}>
+          <SiteHeader />
+        </Suspense>
         {children}
         <SiteFooter />
       </body>

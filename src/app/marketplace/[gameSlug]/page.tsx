@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 
-import { AuthGuard } from "@/components/auth/auth-guard";
 import { GameMarketplaceView } from "@/components/marketplace/game-marketplace-view";
 import { getMarketplaceGame } from "@/lib/marketplace-data";
 
@@ -23,14 +22,12 @@ export default async function GameMarketplacePage({
     game.categories.find((item) => item.slug === category)?.slug ?? game.categories[0].slug;
 
   return (
-    <AuthGuard>
-      <main className="module-page marketplace-game-shell">
-        <div className="shell">
-          <section className="module-page__shell">
-            <GameMarketplaceView game={game} activeCategorySlug={initialCategory} searchQuery={q ?? ""} />
-          </section>
-        </div>
-      </main>
-    </AuthGuard>
+    <main className="module-page marketplace-game-shell">
+      <div className="shell">
+        <section className="module-page__shell">
+          <GameMarketplaceView game={game} activeCategorySlug={initialCategory} searchQuery={q ?? ""} />
+        </section>
+      </div>
+    </main>
   );
 }

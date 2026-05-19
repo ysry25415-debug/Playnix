@@ -201,7 +201,13 @@
   align-items: center;
   gap: 8px;
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   padding: 8px 0;
+}
+
+.eld-header .eld-header__mobile-tabs-shell::-webkit-scrollbar {
+  display: none;
 }
 
 .eld-header .eld-header__mobile-tab {
