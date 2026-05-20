@@ -175,7 +175,9 @@ export function TransactionHistoryPanel({
 
   const filteredRecords = useMemo(() => {
     if (mode === "seller") {
-      return records.filter((item) => item.kind === "sale");
+      return records.filter(
+        (item) => item.kind === "sale" && Boolean(item.room) && item.room?.payment_status !== "unpaid"
+      );
     }
 
     return records;
@@ -201,8 +203,12 @@ export function TransactionHistoryPanel({
 
       {!isLoading && !error && filteredRecords.length === 0 ? (
         <div className="transaction-panel__empty">
-          <strong>No transactions yet.</strong>
-          <span>Completed purchases and sales will appear here.</span>
+          <strong>{mode === "seller" ? "No buyer-paid seller transactions yet." : "No transactions yet."}</strong>
+          <span>
+            {mode === "seller"
+              ? "Held, released, and refunded seller payments will appear here after the buyer completes payment."
+              : "Completed purchases and sales will appear here."}
+          </span>
         </div>
       ) : null}
 

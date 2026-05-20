@@ -24,11 +24,44 @@
   width: 100%;
   aspect-ratio: 16 / 7;
   min-height: 420px;
-  border: 1px solid rgba(67, 66, 82, 0.58);
-  border-radius: 0;
+  border: 1px solid rgba(81, 86, 109, 0.52);
+  border-radius: 28px;
   overflow: hidden;
-  background: rgba(30, 31, 40, 0.86);
-  box-shadow: var(--eld-shadow-2);
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(113, 255, 139, 0.14), transparent 24%),
+    radial-gradient(circle at 86% 22%, rgba(64, 110, 255, 0.14), transparent 26%),
+    linear-gradient(160deg, rgba(17, 19, 27, 0.98), rgba(7, 8, 13, 0.99));
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -24px 48px rgba(0, 0, 0, 0.3);
+}
+
+.eld-hero .eld-hero__media::before,
+.eld-hero .eld-hero__media::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.eld-hero .eld-hero__media::before {
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(108deg, rgba(5, 7, 11, 0.14) 8%, rgba(5, 7, 11, 0.58) 46%, rgba(5, 7, 11, 0.82) 100%),
+    radial-gradient(circle at 72% 24%, rgba(149, 247, 121, 0.18), transparent 24%);
+}
+
+.eld-hero .eld-hero__media::after {
+  right: 24px;
+  bottom: 20px;
+  width: 220px;
+  height: 220px;
+  z-index: 1;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(87, 214, 58, 0.24), transparent 70%);
+  filter: blur(18px);
 }
 
 .eld-hero .eld-hero__media img {
@@ -36,23 +69,31 @@
   height: 100%;
   min-height: 0;
   object-fit: cover;
-  object-position: center 18%;
+  object-position: center 14%;
   display: block;
+  transform: scale(1.06) translateX(1.2%);
+  filter: saturate(1.06) contrast(1.04) brightness(0.8);
 }
 
 .eld-hero .eld-hero__overlay {
   position: absolute;
-  left: 28px;
-  bottom: 26px;
+  left: 34px;
+  bottom: 30px;
   width: min(560px, calc(100% - 56px));
-  padding: 18px;
-  border: 1px solid rgba(67, 66, 82, 0.7);
-  border-radius: 0;
+  padding: 22px;
+  z-index: 2;
+  border: 1px solid rgba(90, 96, 120, 0.46);
+  border-radius: 26px;
   background:
-    linear-gradient(180deg, rgba(30, 31, 40, 0.72), rgba(30, 31, 40, 0.92)),
-    rgba(30, 31, 40, 0.92);
+    linear-gradient(180deg, rgba(18, 20, 28, 0.74), rgba(8, 10, 15, 0.92)),
+    rgba(10, 12, 18, 0.92);
   display: grid;
   gap: 12px;
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .eld-hero .primary-button,
@@ -127,7 +168,7 @@
   }
 
   .eld-hero .eld-hero__media img {
-    object-position: center 24%;
+    object-position: center 20%;
   }
 
   .eld-hero .eld-hero__overlay {
@@ -163,7 +204,8 @@
   }
 
   .eld-hero .eld-hero__media img {
-    object-position: center 26%;
+    object-position: center 18%;
+    transform: scale(1.08);
   }
 }
 

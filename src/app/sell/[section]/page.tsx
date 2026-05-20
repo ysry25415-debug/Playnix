@@ -29,7 +29,7 @@ const sellerSections = {
     eyebrow: "Wallet Core",
     title: "Review your BEN10 balance, held funds, and payout flow.",
     description:
-      "Wallet is the finance surface for payouts, held balance, revenue snapshots, and settlement timing inside the seller center.",
+      "Wallet is the finance surface for buyer-paid held funds, released payouts, revenue snapshots, and settlement timing inside the seller center. Unpaid order attempts do not count toward seller balance.",
     highlights: ["Available balance", "Held funds", "Payout history"],
   },
   "become-a-seller": {
@@ -110,7 +110,7 @@ export default async function SellerSectionRoute({
         <TransactionHistoryPanel
           mode="seller"
           title="Seller payout ledger"
-          description="Follow held funds, released sales, and refunded orders in one place."
+          description="Follow buyer-paid held funds, released sales, and refunded orders in one place. Unpaid order attempts stay outside your seller balance."
         />
       </div>
     );

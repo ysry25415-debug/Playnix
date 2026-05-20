@@ -21,6 +21,7 @@ export function SellerCenterShell({
   const pathname = usePathname();
   const [availableBalanceUsd, setAvailableBalanceUsd] = useState(0);
   const [heldBalanceUsd, setHeldBalanceUsd] = useState(0);
+  const [pendingBuyerPaymentUsd, setPendingBuyerPaymentUsd] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -59,14 +60,15 @@ export function SellerCenterShell({
         .filter((order) => roomByOrderId.get(order.id) === "released")
         .reduce((sum, order) => sum + Number(order.price_usd || 0), 0);
       const held = orders
-        .filter((order) => {
-          const paymentStatus = roomByOrderId.get(order.id);
-          return paymentStatus === "held" || paymentStatus === "unpaid";
-        })
+        .filter((order) => roomByOrderId.get(order.id) === "held")
+        .reduce((sum, order) => sum + Number(order.price_usd || 0), 0);
+      const pendingBuyerPayment = orders
+        .filter((order) => roomByOrderId.get(order.id) === "unpaid")
         .reduce((sum, order) => sum + Number(order.price_usd || 0), 0);
 
       setAvailableBalanceUsd(released);
       setHeldBalanceUsd(held);
+      setPendingBuyerPaymentUsd(pendingBuyerPayment);
     }
 
     void loadSellerBalance();
@@ -89,7 +91,12 @@ export function SellerCenterShell({
           <div className="seller-balance-card">
             <span>Available balance</span>
             <strong>${availableBalanceUsd.toFixed(2)}</strong>
-            <small>Held (not released): ${heldBalanceUsd.toFixed(2)}</small>
+            <small className="seller-balance-card__held">
+              Held from buyer-paid orders: ${heldBalanceUsd.toFixed(2)}
+            </small>
+            <small className="seller-balance-card__pending">
+              Pending buyer payment: ${pendingBuyerPaymentUsd.toFixed(2)}
+            </small>
           </div>
 
           <nav className="seller-center-nav" aria-label="Seller Center">
