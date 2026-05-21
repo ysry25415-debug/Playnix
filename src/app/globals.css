@@ -3620,10 +3620,11 @@ button,
 
 .marketplace-offer-card__seller {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px 12px;
   border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.14);
   background: rgba(7, 12, 18, 0.62);
+  border-radius: 18px;
 }
 
 .marketplace-offer-card__seller-link {
@@ -3636,8 +3637,8 @@ button,
 .marketplace-offer-card__seller-avatar,
 .offer-detail-seller__avatar,
 .seller-public-hero__avatar {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -3664,7 +3665,7 @@ button,
 .marketplace-offer-card__seller-copy {
   min-width: 0;
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .marketplace-offer-card__seller-name-row,
@@ -3678,7 +3679,7 @@ button,
 
 .marketplace-offer-card__seller-copy strong,
 .offer-detail-seller__copy strong {
-  font-size: 0.96rem;
+  font-size: 0.9rem;
 }
 
 .marketplace-offer-card__seller-copy span,

@@ -44,38 +44,41 @@ export async function GET(request: NextRequest) {
   const user = userData.user;
   let { data: profile } = await adminClient
     .from("profiles")
-    .select("role")
+    .select("role,full_name,avatar_url")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!profile) {
-    const fallbackName =
-      typeof user.user_metadata?.display_name === "string" && user.user_metadata.display_name.trim()
-        ? user.user_metadata.display_name.trim()
-        : (user.email?.split("@")[0] ?? "Player");
-    const fallbackAvatar =
-      typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null;
+  const roleValue = profile?.role ?? user.user_metadata?.role;
+  const role: AppRole = isAppRole(roleValue) ? roleValue : "customer";
+  const metadataName =
+    typeof user.user_metadata?.display_name === "string" && user.user_metadata.display_name.trim()
+      ? user.user_metadata.display_name.trim()
+      : "";
+  const metadataAvatar =
+    typeof user.user_metadata?.avatar_url === "string" && user.user_metadata.avatar_url.trim()
+      ? user.user_metadata.avatar_url.trim()
+      : "";
+  const nextDisplayName = metadataName || profile?.full_name || user.email?.split("@")[0] || "Player";
+  const nextAvatarUrl = metadataAvatar || profile?.avatar_url || null;
 
+  if (!profile || profile.full_name !== nextDisplayName || profile.avatar_url !== nextAvatarUrl) {
     await adminClient.from("profiles").upsert(
       {
         id: user.id,
-        full_name: fallbackName,
-        avatar_url: fallbackAvatar,
-        role: "customer",
+        full_name: nextDisplayName,
+        avatar_url: nextAvatarUrl,
+        role,
       },
       { onConflict: "id" }
     );
 
     const { data: reloaded } = await adminClient
       .from("profiles")
-      .select("role")
+      .select("role,full_name,avatar_url")
       .eq("id", user.id)
       .maybeSingle();
     profile = reloaded;
   }
-
-  const roleValue = profile?.role;
-  const role: AppRole = isAppRole(roleValue) ? roleValue : "customer";
 
   const currentMetadataRole = user.user_metadata?.role;
   if (currentMetadataRole !== role) {

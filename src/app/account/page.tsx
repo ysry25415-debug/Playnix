@@ -210,6 +210,7 @@ export default function AccountPage() {
       return;
     }
 
+    await fetchRoleForCurrentUser(supabase);
     setUser(data.user ?? user);
     setSuccess("Profile updated successfully.");
   }

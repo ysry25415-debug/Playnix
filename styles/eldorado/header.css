@@ -130,9 +130,17 @@
 
 .eld-header .eld-header__tools-shell {
   display: grid;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
   min-height: 52px;
   padding: 8px 0 10px;
+}
+
+.eld-header .eld-header__search-column {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
 }
 
 .eld-header .eld-header__search {
@@ -144,18 +152,20 @@
   position: relative;
 }
 
-.eld-header .eld-header__search-meta {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
 .eld-header .eld-header__search-history-chips {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.eld-header .eld-header__trust-inline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 420px;
+  padding-top: 18px;
 }
 
 .eld-header .eld-header__search-history-chips button {
@@ -168,12 +178,6 @@
   font-size: 0.72rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-}
-
-.eld-header .eld-header__search-helper {
-  color: var(--eld-text-secondary);
-  font-size: 0.78rem;
-  line-height: 1.6;
 }
 
 .eld-header .eld-header__search-history {
@@ -275,37 +279,6 @@
     0 16px 28px rgba(0, 0, 0, 0.24);
 }
 
-.eld-header .eld-header__trust-strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.eld-header .eld-header__trust-card {
-  padding: 11px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(84, 89, 108, 0.76);
-  background:
-    linear-gradient(180deg, rgba(20, 22, 31, 0.94), rgba(10, 12, 18, 0.94)),
-    rgba(15, 18, 26, 0.92);
-  display: grid;
-  gap: 6px;
-  min-height: 72px;
-}
-
-.eld-header .eld-header__trust-card strong {
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #eff3ff;
-}
-
-.eld-header .eld-header__trust-card span {
-  color: var(--eld-text-secondary);
-  font-size: 0.78rem;
-  line-height: 1.55;
-}
-
 .eld-header .eld-header__mobile-tabs {
   border-top: 1px solid rgba(67, 66, 82, 0.36);
   background: rgba(30, 31, 40, 0.98);
@@ -370,6 +343,10 @@
 .eld-header--compact .eld-header__search input {
   min-height: 34px;
   font-size: 0.84rem;
+}
+
+.eld-header--compact .eld-header__trust-inline {
+  padding-top: 14px;
 }
 
 @media (max-width: 820px) {

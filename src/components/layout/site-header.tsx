@@ -22,18 +22,9 @@ const marketplaceMobileTabs = [
 ];
 
 const headerTrustSignals = [
-  {
-    title: "Protected checkout",
-    hint: "Buyer funds stay controlled until the correct handoff checkpoint.",
-  },
-  {
-    title: "Held funds until confirmation",
-    hint: "The seller payout does not move until the buyer confirms the delivery result.",
-  },
-  {
-    title: "Live delivery room",
-    hint: "Chat-based orders move into a guided room with proof, updates, and review flow.",
-  },
+  "Protected checkout",
+  "Held funds until confirmation",
+  "Live delivery room",
 ];
 
 export function SiteHeader() {
@@ -354,21 +345,21 @@ export function SiteHeader() {
 
       <div className={isSearchCompact ? "eld-header__tools eld-header__tools--compact" : "eld-header__tools"}>
         <div className="shell eld-header__tools-shell">
-          <form className="eld-header__search" onSubmit={handleHeaderSearchSubmit}>
-            <label htmlFor="market-search-ui-only">Search BEN10 platform</label>
-            <input
-              id="market-search-ui-only"
-              type="search"
-              placeholder="Search offers, games, and sellers"
-              aria-label="Search BEN10 platform"
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-            />
-          </form>
+          <div className="eld-header__search-column">
+            <form className="eld-header__search" onSubmit={handleHeaderSearchSubmit}>
+              <label htmlFor="market-search-ui-only">Search BEN10 platform</label>
+              <input
+                id="market-search-ui-only"
+                type="search"
+                placeholder="Search offers, games, and sellers"
+                aria-label="Search BEN10 platform"
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+              />
+            </form>
 
-          <div className="eld-header__search-meta" aria-label="Helpful search context">
             {recentSearches.length > 0 ? (
-              <div className="eld-header__search-history">
+              <div className="eld-header__search-history" aria-label="Recent searches">
                 <div className="eld-header__search-history-head">
                   <span>Recent searches</span>
                   <button type="button" onClick={clearRecentSearches}>
@@ -383,19 +374,14 @@ export function SiteHeader() {
                   ))}
                 </div>
               </div>
-            ) : (
-              <span className="eld-header__search-helper">
-                Search active offers, public seller profiles, and game lanes from one field.
-              </span>
-            )}
+            ) : null}
           </div>
 
-          <div className="eld-header__trust-strip" aria-label="Marketplace trust signals">
+          <div className="eld-header__trust-inline" aria-label="Marketplace trust signals">
             {headerTrustSignals.map((signal) => (
-              <article key={signal.title} className="eld-header__trust-card">
-                <strong>{signal.title}</strong>
-                <span>{signal.hint}</span>
-              </article>
+              <span key={signal} className="eld-header__search-signal">
+                {signal}
+              </span>
             ))}
           </div>
         </div>

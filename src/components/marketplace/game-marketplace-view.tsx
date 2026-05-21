@@ -461,18 +461,13 @@ export function GameMarketplaceView({
                         <strong>{sellerName}</strong>
                         {sellerVerified ? <SellerVerifiedBadge /> : null}
                       </span>
-                      <span>
-                        {sellerRating.totalReviews > 0
-                          ? `${sellerRating.totalReviews} completed-order reviews`
-                          : "Protected seller launch score"}
-                      </span>
+                      <RatingStars
+                        value={sellerRating.displayedAverage}
+                        showValue={false}
+                        size="sm"
+                      />
                     </span>
                   </Link>
-                  <RatingStars
-                    value={sellerRating.displayedAverage}
-                    total={sellerRating.totalReviews}
-                    size="sm"
-                  />
                 </div>
 
                 <div className="hero-actions marketplace-offer-card__actions">
