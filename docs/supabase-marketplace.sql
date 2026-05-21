@@ -158,6 +158,18 @@ create table if not exists public.order_messages (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.order_reviews (
+  id bigserial primary key,
+  order_id uuid not null unique references public.orders(id) on delete cascade,
+  offer_id uuid not null references public.offers(id) on delete cascade,
+  seller_id uuid not null references auth.users(id) on delete cascade,
+  buyer_id uuid not null references auth.users(id) on delete cascade,
+  rating integer not null check (rating between 1 and 5),
+  comment text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.user_notifications (
   id bigserial primary key,
   recipient_id uuid not null references auth.users(id) on delete cascade,
@@ -192,6 +204,7 @@ create index if not exists idx_order_trade_rooms_seller_id on public.order_trade
 create index if not exists idx_order_trade_rooms_buyer_id on public.order_trade_rooms(buyer_id);
 create index if not exists idx_order_trade_rooms_status on public.order_trade_rooms(room_status, payment_status);
 create index if not exists idx_order_messages_order_id on public.order_messages(order_id, created_at);
+create index if not exists idx_order_reviews_seller_id on public.order_reviews(seller_id, created_at desc);
 create index if not exists idx_user_notifications_recipient_id on public.user_notifications(recipient_id, is_read, created_at);
 create index if not exists idx_offer_images_offer_id on public.offer_images(offer_id, sort_order, created_at);
 create index if not exists idx_offer_images_seller_id on public.offer_images(seller_id);
@@ -214,6 +227,11 @@ create trigger trg_order_trade_rooms_updated_at
 before update on public.order_trade_rooms
 for each row execute function public.set_updated_at();
 
+drop trigger if exists trg_order_reviews_updated_at on public.order_reviews;
+create trigger trg_order_reviews_updated_at
+before update on public.order_reviews
+for each row execute function public.set_updated_at();
+
 alter table public.offers enable row level security;
 alter table public.orders enable row level security;
 alter table public.offer_images enable row level security;
@@ -221,6 +239,7 @@ alter table public.offer_private_deliveries enable row level security;
 alter table public.order_delivery_details enable row level security;
 alter table public.order_trade_rooms enable row level security;
 alter table public.order_messages enable row level security;
+alter table public.order_reviews enable row level security;
 alter table public.user_notifications enable row level security;
 
 drop policy if exists "offers_select_market_or_owner" on public.offers;
@@ -483,6 +502,48 @@ with check (
         or o.seller_id = auth.uid()
       )
   )
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role = 'admin'
+  )
+);
+
+drop policy if exists "order_reviews_select_public" on public.order_reviews;
+create policy "order_reviews_select_public"
+on public.order_reviews for select
+to authenticated
+using (true);
+
+drop policy if exists "order_reviews_insert_buyer" on public.order_reviews;
+create policy "order_reviews_insert_buyer"
+on public.order_reviews for insert
+to authenticated
+with check (
+  buyer_id = auth.uid()
+  and exists (
+    select 1
+    from public.orders o
+    where o.id = order_reviews.order_id
+      and o.buyer_id = auth.uid()
+      and o.seller_id = order_reviews.seller_id
+      and o.offer_id = order_reviews.offer_id
+      and o.status = 'delivered'
+  )
+);
+
+drop policy if exists "order_reviews_update_buyer_or_admin" on public.order_reviews;
+create policy "order_reviews_update_buyer_or_admin"
+on public.order_reviews for update
+to authenticated
+using (
+  buyer_id = auth.uid()
+  or exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role = 'admin'
+  )
+)
+with check (
+  buyer_id = auth.uid()
   or exists (
     select 1 from public.profiles p
     where p.id = auth.uid() and p.role = 'admin'

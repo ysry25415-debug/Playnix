@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { RatingStars } from "@/components/shared/rating-stars";
+import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 import {
   attachImagesToOffers,
   getSchemaCompatibilityMessage,
@@ -17,9 +19,21 @@ import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { type MarketplaceGame } from "@/lib/marketplace-data";
 import { type OfferWithImagesRow } from "@/lib/marketplace-types";
 import { triggerPageLoader } from "@/lib/page-loader-events";
+import {
+  getSellerRatingSummary,
+  normalizeOrderReviewRow,
+  type SellerRatingSummary,
+} from "@/lib/seller-ratings";
 import { supabase } from "@/lib/supabase-client";
 
 const RECENT_LANES_KEY = "playnix-recent-lanes";
+
+type SellerMarketplaceProfile = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: string | null;
+};
 
 type GameMarketplaceViewProps = {
   game: MarketplaceGame;
@@ -34,6 +48,8 @@ export function GameMarketplaceView({
 }: GameMarketplaceViewProps) {
   const router = useRouter();
   const [offers, setOffers] = useState<OfferWithImagesRow[]>([]);
+  const [sellerProfiles, setSellerProfiles] = useState<Record<string, SellerMarketplaceProfile>>({});
+  const [sellerRatings, setSellerRatings] = useState<Record<string, SellerRatingSummary>>({});
   const [viewerRole, setViewerRole] = useState<AppRole | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -96,31 +112,77 @@ export function GameMarketplaceView({
         .filter((offer) => offer.status === "active");
 
       const offerIds = normalizedOffers.map((offer) => offer.id).filter(Boolean);
+      const sellerIds = Array.from(
+        new Set(normalizedOffers.map((offer) => offer.seller_id).filter((value): value is string => Boolean(value)))
+      );
 
       if (offerIds.length === 0) {
         setOffers([]);
+        setSellerProfiles({});
+        setSellerRatings({});
         setIsLoading(false);
         return;
       }
 
-      const { data: imagesData, error: imagesError } = await supabase
-        .from("offer_images")
-        .select("*")
-        .in("offer_id", offerIds)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true });
+      const [imagesResult, profilesResult, reviewsResult] = await Promise.all([
+        supabase
+          .from("offer_images")
+          .select("*")
+          .in("offer_id", offerIds)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true }),
+        sellerIds.length
+          ? supabase.from("profiles").select("id,full_name,avatar_url,role").in("id", sellerIds)
+          : Promise.resolve({ data: [], error: null }),
+        sellerIds.length
+          ? supabase.from("order_reviews").select("*").in("seller_id", sellerIds).order("created_at", { ascending: false })
+          : Promise.resolve({ data: [], error: null }),
+      ]);
 
       if (!isMounted) return;
 
-      if (imagesError) {
+      const nextProfiles: Record<string, SellerMarketplaceProfile> = {};
+      (profilesResult.data ?? []).forEach((profile) => {
+        nextProfiles[profile.id] = {
+          id: profile.id,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+          role: typeof profile.role === "string" ? profile.role : null,
+        };
+      });
+      setSellerProfiles(nextProfiles);
+
+      if (imagesResult.error) {
         setOffers(normalizedOffers.map((offer) => ({ ...offer, offer_images: [] } satisfies OfferWithImagesRow)));
+        setSellerRatings({});
         setIsLoading(false);
         return;
       }
 
-      const normalizedImages = (imagesData ?? [])
+      const normalizedImages = (imagesResult.data ?? [])
         .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
         .map((item) => normalizeOfferImageRow(item));
+
+      if (!reviewsResult.error) {
+        const reviewsBySellerId = new Map<string, ReturnType<typeof normalizeOrderReviewRow>[]>();
+
+        (reviewsResult.data ?? [])
+          .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+          .map((item) => normalizeOrderReviewRow(item))
+          .forEach((review) => {
+            const current = reviewsBySellerId.get(review.seller_id) ?? [];
+            current.push(review);
+            reviewsBySellerId.set(review.seller_id, current);
+          });
+
+        const nextRatings: Record<string, SellerRatingSummary> = {};
+        sellerIds.forEach((sellerId) => {
+          nextRatings[sellerId] = getSellerRatingSummary(reviewsBySellerId.get(sellerId) ?? []);
+        });
+        setSellerRatings(nextRatings);
+      } else {
+        setSellerRatings({});
+      }
 
       setOffers(attachImagesToOffers(normalizedOffers, normalizedImages));
       setIsLoading(false);
@@ -315,16 +377,16 @@ export function GameMarketplaceView({
 
       <div className="marketplace-trust-grid">
         <article className="marketplace-trust-card">
-          <strong>Protected checkout</strong>
-          <p>Buyer funds stay controlled until the order reaches the correct delivery checkpoint.</p>
+          <strong>Offer detail browsing</strong>
+          <p>Each listing now opens into its own page so buyers can inspect content before ordering.</p>
         </article>
         <article className="marketplace-trust-card">
-          <strong>Seller signals</strong>
-          <p>Users can compare category relevance, delivery mode, stock, and seller positioning much faster.</p>
+          <strong>Seller identity</strong>
+          <p>Every card now points to the seller storefront, rating layer, and public offer lineup.</p>
         </article>
         <article className="marketplace-trust-card">
-          <strong>Live order follow-up</strong>
-          <p>Each completed purchase moves into a live room for updates, confirmation, and dispute protection.</p>
+          <strong>Protected follow-up</strong>
+          <p>Chat handoff, proof steps, and post-order reviews all stay connected to the same seller history.</p>
         </article>
       </div>
 
@@ -350,27 +412,37 @@ export function GameMarketplaceView({
         <div className="marketplace-offer-grid">
           {filteredOffers.map((offer) => {
             const primaryImage = getPrimaryOfferImage(offer.offer_images);
+            const sellerProfile = sellerProfiles[offer.seller_id];
+            const sellerRating = sellerRatings[offer.seller_id] ?? getSellerRatingSummary([]);
+            const sellerName = sellerProfile?.full_name || "Seller";
+            const sellerAvatar = sellerProfile?.avatar_url || "";
+            const sellerAvatarFallback = sellerName.slice(0, 1).toUpperCase();
+            const sellerVerified = sellerProfile?.role === "seller" || sellerProfile?.role === "admin";
 
             return (
               <article key={offer.id} className="marketplace-offer-card">
-                {primaryImage ? (
-                  <img
-                    className="marketplace-offer-card__media"
-                    src={primaryImage.public_url}
-                    alt={offer.title}
-                  />
-                ) : (
-                  <div className="marketplace-offer-card__media marketplace-offer-card__media--placeholder">
-                    No image
-                  </div>
-                )}
+                <Link href={`/marketplace/offers/${offer.id}`} className="marketplace-offer-card__media-link">
+                  {primaryImage ? (
+                    <img
+                      className="marketplace-offer-card__media"
+                      src={primaryImage.public_url}
+                      alt={offer.title}
+                    />
+                  ) : (
+                    <div className="marketplace-offer-card__media marketplace-offer-card__media--placeholder">
+                      No image
+                    </div>
+                  )}
+                </Link>
 
                 <div className="marketplace-offer-card__head">
                   <span className="section-eyebrow">{activeCategory.title}</span>
                   <strong>${offer.price_usd.toFixed(2)}</strong>
                 </div>
 
-                <h3>{offer.title}</h3>
+                <h3>
+                  <Link href={`/marketplace/offers/${offer.id}`}>{offer.title}</Link>
+                </h3>
                 <p>{offer.description}</p>
 
                 <div className="marketplace-offer-card__meta">
@@ -379,9 +451,36 @@ export function GameMarketplaceView({
                   <span>Stock: {offer.stock_count}</span>
                 </div>
 
-                <div className="hero-actions">
+                <div className="marketplace-offer-card__seller">
+                  <Link className="marketplace-offer-card__seller-link" href={`/sellers/${offer.seller_id}`}>
+                    <span className="marketplace-offer-card__seller-avatar" aria-hidden="true">
+                      {sellerAvatar ? <img src={sellerAvatar} alt="" /> : sellerAvatarFallback}
+                    </span>
+                    <span className="marketplace-offer-card__seller-copy">
+                      <span className="marketplace-offer-card__seller-name-row">
+                        <strong>{sellerName}</strong>
+                        {sellerVerified ? <SellerVerifiedBadge /> : null}
+                      </span>
+                      <span>
+                        {sellerRating.totalReviews > 0
+                          ? `${sellerRating.totalReviews} completed-order reviews`
+                          : "Protected seller launch score"}
+                      </span>
+                    </span>
+                  </Link>
+                  <RatingStars
+                    value={sellerRating.displayedAverage}
+                    total={sellerRating.totalReviews}
+                    size="sm"
+                  />
+                </div>
+
+                <div className="hero-actions marketplace-offer-card__actions">
+                  <Link className="ghost-button" href={`/marketplace/offers/${offer.id}`}>
+                    View Offer
+                  </Link>
                   {viewerId === offer.seller_id ? (
-                    <Link className="ghost-button" href={`/sell/offers/${offer.id}/edit`}>
+                    <Link className="primary-button" href={`/sell/offers/${offer.id}/edit`}>
                       Manage Offer
                     </Link>
                   ) : viewerRole === "customer" ? (

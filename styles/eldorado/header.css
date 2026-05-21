@@ -152,14 +152,12 @@
   flex-wrap: wrap;
 }
 
-.eld-header .eld-header__search-signals,
 .eld-header .eld-header__search-history-chips {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.eld-header .eld-header__search-signal,
 .eld-header .eld-header__search-history-chips button {
   min-height: 28px;
   padding: 0 11px;
@@ -170,6 +168,12 @@
   font-size: 0.72rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.eld-header .eld-header__search-helper {
+  color: var(--eld-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.6;
 }
 
 .eld-header .eld-header__search-history {
@@ -271,6 +275,37 @@
     0 16px 28px rgba(0, 0, 0, 0.24);
 }
 
+.eld-header .eld-header__trust-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.eld-header .eld-header__trust-card {
+  padding: 11px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(84, 89, 108, 0.76);
+  background:
+    linear-gradient(180deg, rgba(20, 22, 31, 0.94), rgba(10, 12, 18, 0.94)),
+    rgba(15, 18, 26, 0.92);
+  display: grid;
+  gap: 6px;
+  min-height: 72px;
+}
+
+.eld-header .eld-header__trust-card strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #eff3ff;
+}
+
+.eld-header .eld-header__trust-card span {
+  color: var(--eld-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
 .eld-header .eld-header__mobile-tabs {
   border-top: 1px solid rgba(67, 66, 82, 0.36);
   background: rgba(30, 31, 40, 0.98);
@@ -345,7 +380,7 @@
 
   .eld-header .eld-header__actions .ghost-button,
   .eld-header .eld-header__actions--user .ghost-button,
-  .eld-header .eld-header__actions .primary-button {
+.eld-header .eld-header__actions .primary-button {
     min-height: 40px;
     padding: 0 12px;
   }

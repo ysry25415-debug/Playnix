@@ -109,6 +109,18 @@ export type OrderMessageRow = {
   created_at: string;
 };
 
+export type OrderReviewRow = {
+  id: number;
+  order_id: string;
+  offer_id: string;
+  seller_id: string;
+  buyer_id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type UserNotificationRow = {
   id: number;
   recipient_id: string;

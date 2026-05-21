@@ -22,9 +22,18 @@ const marketplaceMobileTabs = [
 ];
 
 const headerTrustSignals = [
-  "Protected checkout",
-  "Held funds until confirmation",
-  "Live delivery room",
+  {
+    title: "Protected checkout",
+    hint: "Buyer funds stay controlled until the correct handoff checkpoint.",
+  },
+  {
+    title: "Held funds until confirmation",
+    hint: "The seller payout does not move until the buyer confirms the delivery result.",
+  },
+  {
+    title: "Live delivery room",
+    hint: "Chat-based orders move into a guided room with proof, updates, and review flow.",
+  },
 ];
 
 export function SiteHeader() {
@@ -358,14 +367,6 @@ export function SiteHeader() {
           </form>
 
           <div className="eld-header__search-meta" aria-label="Helpful search context">
-            <div className="eld-header__search-signals">
-              {headerTrustSignals.map((signal) => (
-                <span key={signal} className="eld-header__search-signal">
-                  {signal}
-                </span>
-              ))}
-            </div>
-
             {recentSearches.length > 0 ? (
               <div className="eld-header__search-history">
                 <div className="eld-header__search-history-head">
@@ -382,7 +383,20 @@ export function SiteHeader() {
                   ))}
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <span className="eld-header__search-helper">
+                Search active offers, public seller profiles, and game lanes from one field.
+              </span>
+            )}
+          </div>
+
+          <div className="eld-header__trust-strip" aria-label="Marketplace trust signals">
+            {headerTrustSignals.map((signal) => (
+              <article key={signal.title} className="eld-header__trust-card">
+                <strong>{signal.title}</strong>
+                <span>{signal.hint}</span>
+              </article>
+            ))}
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
+import { OrderReviewPanel } from "@/components/orders/order-review-panel";
 import {
   getSchemaCompatibilityMessage,
   isLikelySchemaCompatibilityError,
@@ -599,6 +600,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const sellerName = profiles[order.seller_id]?.full_name || "Seller";
   const buyerAvatar = profiles[order.buyer_id]?.avatar_url || "";
   const sellerAvatar = profiles[order.seller_id]?.avatar_url || "";
+  const sellerProfileHref = `/sellers/${order.seller_id}`;
   const nextStepTitle = sellerCanStartRoom
     ? "Seller should open the room now."
     : buyerNeedsPayment
@@ -742,7 +744,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
           </div>
 
           <div className="order-room__participants">
-            <article className="order-room__participant">
+            <Link className="order-room__participant order-room__participant--link" href={sellerProfileHref}>
               {sellerAvatar ? (
                 <img src={sellerAvatar} alt={sellerName} />
               ) : (
@@ -752,7 +754,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                 <strong>Seller</strong>
                 <span>{sellerName}</span>
               </div>
-            </article>
+            </Link>
             <article className="order-room__participant">
               {buyerAvatar ? (
                 <img src={buyerAvatar} alt={buyerName} />
@@ -849,6 +851,15 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                     The order exists, but the seller still needs to open the delivery room before you
                     can continue.
                   </p>
+                  {order.delivery_mode === "chat" ? (
+                    <div className="order-room__chat-note">
+                      <strong>Seller offline or not connected yet</strong>
+                      <span>
+                        This chat-based order stays paused until the seller opens the room. BEN10 will
+                        notify you as soon as the seller connects and starts the handoff.
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -968,6 +979,12 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                   ) : (
                     messages.map((message) => {
                       const profile = message.sender_id ? profiles[message.sender_id] : null;
+                      const messageAvatar =
+                        message.sender_id === order.seller_id
+                          ? sellerAvatar
+                          : message.sender_id === order.buyer_id
+                            ? buyerAvatar
+                            : profile?.avatar_url || "";
                       const senderLabel = message.is_system
                         ? "System"
                         : message.sender_id === viewerId
@@ -990,7 +1007,22 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                           }
                         >
                           <div className="order-room__message-head">
-                            <strong>{senderLabel}</strong>
+                            <div className="order-room__message-author">
+                              {!message.is_system ? (
+                                message.sender_id === order.seller_id ? (
+                                  <Link className="order-room__message-avatar-link" href={sellerProfileHref}>
+                                    <span className="order-room__message-avatar" aria-hidden="true">
+                                      {messageAvatar ? <img src={messageAvatar} alt="" /> : senderLabel.slice(0, 1)}
+                                    </span>
+                                  </Link>
+                                ) : (
+                                  <span className="order-room__message-avatar" aria-hidden="true">
+                                    {messageAvatar ? <img src={messageAvatar} alt="" /> : senderLabel.slice(0, 1)}
+                                  </span>
+                                )
+                              ) : null}
+                              <strong>{senderLabel}</strong>
+                            </div>
                             <span>{new Date(message.created_at).toLocaleString()}</span>
                           </div>
                           <p>{message.message}</p>
@@ -1118,6 +1150,13 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                   Copy Order ID
                 </button>
               </section>
+
+              <OrderReviewPanel
+                orderId={order.id}
+                sellerName={sellerName}
+                canReview={isBuyer && (room.room_status === "completed" || room.resolution_status === "buyer_confirmed")}
+                onSubmitted={refreshRoomState}
+              />
             </aside>
           </div>
 
