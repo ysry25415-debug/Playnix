@@ -12,11 +12,19 @@ import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
 
+const RECENT_SEARCHES_KEY = "playnix-recent-searches";
+
 const marketplaceMobileTabs = [
   { href: "/", label: "Home" },
   { href: "/marketplace", label: "Marketplace" },
   { href: "/sell", label: "Sell" },
   { href: "/support", label: "Support" },
+];
+
+const headerTrustSignals = [
+  "Protected checkout",
+  "Held funds until confirmation",
+  "Live delivery room",
 ];
 
 export function SiteHeader() {
@@ -28,6 +36,7 @@ export function SiteHeader() {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isSearchCompact, setIsSearchCompact] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -142,6 +151,26 @@ export function SiteHeader() {
     setSearchText(searchParams?.get("q") ?? "");
   }, [searchParams]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(RECENT_SEARCHES_KEY);
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+
+      setRecentSearches(
+        parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 5)
+      );
+    } catch {
+      setRecentSearches([]);
+    }
+  }, []);
+
   const roleLabel =
     userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : userRole === "customer" ? "Customer" : "Loading role...";
   function isActivePath(href: string) {
@@ -244,14 +273,27 @@ export function SiteHeader() {
     );
   }
 
-  function handleHeaderSearchSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function saveRecentSearch(query: string) {
+    if (typeof window === "undefined" || !query) {
+      return;
+    }
 
-    const query = searchText.trim();
+    try {
+      const nextRecentSearches = [query, ...recentSearches.filter((item) => item.toLowerCase() !== query.toLowerCase())].slice(0, 5);
+      setRecentSearches(nextRecentSearches);
+      window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(nextRecentSearches));
+    } catch {
+      // Ignore storage errors to keep search usable.
+    }
+  }
+
+  function navigateToSearch(rawQuery: string) {
+    const query = rawQuery.trim();
     const nextParams = new URLSearchParams();
 
     if (query) {
       nextParams.set("q", query);
+      saveRecentSearch(query);
     }
 
     const isGameMarketplacePath =
@@ -275,6 +317,24 @@ export function SiteHeader() {
     router.push(targetHref);
   }
 
+  function handleHeaderSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    navigateToSearch(searchText);
+  }
+
+  function handleRecentSearchClick(query: string) {
+    setSearchText(query);
+    navigateToSearch(query);
+  }
+
+  function clearRecentSearches() {
+    setRecentSearches([]);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(RECENT_SEARCHES_KEY);
+    }
+  }
+
   return (
     <header className={isSearchCompact ? "eld-header eld-header--compact" : "eld-header"}>
       <div className="shell eld-header__main">
@@ -296,6 +356,34 @@ export function SiteHeader() {
               onChange={(event) => setSearchText(event.target.value)}
             />
           </form>
+
+          <div className="eld-header__search-meta" aria-label="Helpful search context">
+            <div className="eld-header__search-signals">
+              {headerTrustSignals.map((signal) => (
+                <span key={signal} className="eld-header__search-signal">
+                  {signal}
+                </span>
+              ))}
+            </div>
+
+            {recentSearches.length > 0 ? (
+              <div className="eld-header__search-history">
+                <div className="eld-header__search-history-head">
+                  <span>Recent searches</span>
+                  <button type="button" onClick={clearRecentSearches}>
+                    Clear
+                  </button>
+                </div>
+                <div className="eld-header__search-history-chips">
+                  {recentSearches.map((query) => (
+                    <button key={query} type="button" onClick={() => handleRecentSearchClick(query)}>
+                      {query}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import {
   getSchemaCompatibilityMessage,
@@ -29,6 +29,21 @@ type PartyProfile = {
   avatar_url: string | null;
 };
 
+type TimelineStep = {
+  label: string;
+  detail: string;
+  isDone: boolean;
+  at: string | null;
+};
+
+function formatRoomDate(value: string | null | undefined) {
+  if (!value) {
+    return "Not reached yet";
+  }
+
+  return new Date(value).toLocaleString();
+}
+
 export function OrderRoom({ orderId }: OrderRoomProps) {
   const searchParams = useSearchParams();
   const [order, setOrder] = useState<OrderRow | null>(null);
@@ -43,10 +58,13 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [sellerWindowMinutes, setSellerWindowMinutes] = useState("60");
   const [messageInput, setMessageInput] = useState("");
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState("");
   const bootstrapTriedRef = useRef(false);
   const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const stripeConfirmTriedRef = useRef(false);
+  const copyFeedbackTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -212,6 +230,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
         .eq("order_id", orderId)
         .eq("is_read", false);
 
+      setLastSyncedAt(new Date().toISOString());
       setIsLoading(false);
     }
 
@@ -230,6 +249,24 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length]);
+
+  useEffect(() => {
+    const textarea = composerInputRef.current;
+    if (!textarea) {
+      return;
+    }
+
+    textarea.style.height = "0px";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
+  }, [messageInput]);
+
+  useEffect(() => {
+    return () => {
+      if (copyFeedbackTimerRef.current) {
+        window.clearTimeout(copyFeedbackTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const sessionId = searchParams.get("stripe_session_id");
@@ -361,6 +398,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
     if (roomResult.data) setRoom(roomResult.data as OrderTradeRoomRow);
     setDeliveryDetails((deliveryResult.data ?? null) as OrderDeliveryDetailsRow | null);
     setMessages((messagesResult.data ?? []) as OrderMessageRow[]);
+    setLastSyncedAt(new Date().toISOString());
   }
 
   async function handleStartRoom() {
@@ -390,20 +428,53 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
     window.location.assign(checkoutUrl);
   }
 
-  async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitMessage() {
+    const trimmedMessage = messageInput.trim();
+    if (!trimmedMessage) {
+      return;
+    }
 
     const payload = await callOrderApi(
       "/api/orders/room/message",
       {
         orderId,
-        message: messageInput,
+        message: trimmedMessage,
       }
     );
 
     if (payload) {
       setMessageInput("");
       await refreshRoomState();
+      composerInputRef.current?.focus();
+    }
+  }
+
+  async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitMessage();
+  }
+
+  async function handleCopyText(value: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyFeedback(`${label} copied.`);
+
+      if (copyFeedbackTimerRef.current) {
+        window.clearTimeout(copyFeedbackTimerRef.current);
+      }
+
+      copyFeedbackTimerRef.current = window.setTimeout(() => {
+        setCopyFeedback("");
+      }, 2400);
+    } catch {
+      setError(`Could not copy ${label.toLowerCase()}.`);
+    }
+  }
+
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void submitMessage();
     }
   }
 
@@ -528,6 +599,117 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const sellerName = profiles[order.seller_id]?.full_name || "Seller";
   const buyerAvatar = profiles[order.buyer_id]?.avatar_url || "";
   const sellerAvatar = profiles[order.seller_id]?.avatar_url || "";
+  const nextStepTitle = sellerCanStartRoom
+    ? "Seller should open the room now."
+    : buyerNeedsPayment
+      ? "Buyer should complete secure payment hold."
+      : sellerWaitingForBuyer
+        ? "Wait for buyer payment confirmation."
+        : sellerCanMarkDelivered
+          ? "Seller should send the delivery and mark it complete."
+          : buyerCanConfirm
+            ? "Buyer should confirm receipt or report a problem."
+            : room.room_status === "completed"
+              ? "This order is complete."
+              : room.room_status === "disputed"
+                ? "Admin review is now the active path."
+                : "Keep the room updated until the next checkpoint.";
+  const nextStepDescription = sellerCanStartRoom
+    ? "Set the delivery window, open the room, and let the buyer know where the conversation will happen."
+    : buyerNeedsPayment
+      ? "Once Stripe confirms the payment, the funds stay protected on-platform and the live chat unlocks automatically."
+      : sellerWaitingForBuyer
+        ? "No seller payout is counted yet. The room becomes active after the buyer finishes the payment hold step."
+        : sellerCanMarkDelivered
+          ? "Use the room chat to explain what you sent, then mark delivery so the buyer can verify it with confidence."
+          : buyerCanConfirm
+            ? "If everything matches the offer, confirm receipt to release the payout. If not, report the issue here so funds stay protected."
+            : room.room_status === "completed"
+              ? "The buyer confirmed receipt and the room now serves as the final delivery record."
+              : room.room_status === "disputed"
+                ? "The order is paused under dispute review. Funds stay controlled until the admin resolves the case."
+                : "Keep both sides aligned in chat so the order keeps moving without confusion.";
+  const protectionItems = [
+    room.payment_status === "unpaid"
+      ? "No seller payout is counted yet because the buyer has not completed payment."
+      : room.payment_status === "held"
+        ? "Funds are currently held on-platform until the buyer confirms receipt or admin resolves a dispute."
+        : room.payment_status === "released"
+          ? "The payout has been released to the seller because the order reached a successful completion checkpoint."
+          : "The buyer was refunded, so this order does not contribute to seller payout.",
+    "Every important step stays inside one room: payment hold, delivery chat, buyer confirmation, and dispute evidence.",
+    "If something feels wrong, the buyer can open a dispute and keep the funds protected during review.",
+  ];
+  const roomTimeline: TimelineStep[] = [
+    {
+      label: "Order created",
+      detail: "The order exists and the room record is available for both sides.",
+      isDone: true,
+      at: order.created_at,
+    },
+    {
+      label: "Seller opened room",
+      detail: "The seller activates the room and sets the delivery window.",
+      isDone: Boolean(room.seller_started_at),
+      at: room.seller_started_at,
+    },
+    {
+      label: "Buyer payment held",
+      detail: "Buyer funds are protected on-platform before the delivery flow continues.",
+      isDone: room.payment_status === "held" || room.payment_status === "released" || room.payment_status === "refunded",
+      at: room.buyer_paid_at,
+    },
+    {
+      label: "Seller marked delivery",
+      detail: "The seller confirms the information or goods were sent in the room.",
+      isDone: Boolean(room.seller_marked_delivered_at),
+      at: room.seller_marked_delivered_at,
+    },
+    {
+      label: room.room_status === "disputed" ? "Dispute or admin outcome" : "Buyer confirmation",
+      detail:
+        room.room_status === "disputed"
+          ? "The order moved into a protected dispute path."
+          : "The buyer verifies the delivery and completes the trade.",
+      isDone: Boolean(room.buyer_confirmed_received_at || room.buyer_disputed_at || room.resolved_at),
+      at: room.buyer_confirmed_received_at ?? room.buyer_disputed_at ?? room.resolved_at,
+    },
+  ];
+  const quickReplies =
+    canSendMessages
+      ? isSeller
+        ? room.seller_marked_delivered_at
+          ? [
+              "I have already delivered the info. Please review it and confirm when you are ready.",
+              "If anything looks unclear, tell me here and I will help immediately.",
+              "Everything for this order was sent in the room. I am staying available for follow-up.",
+            ]
+          : [
+              "I am preparing your delivery now and will update you here shortly.",
+              "Please stay in this room so I can confirm the delivery details with you safely.",
+              "I will mark the order as delivered as soon as the information is sent.",
+            ]
+        : room.seller_marked_delivered_at
+          ? [
+              "I received the details and I am checking everything now.",
+              "Please give me a moment to verify the delivery before I confirm receipt.",
+              "There is an issue with the delivery. I need clarification before I can confirm.",
+            ]
+          : [
+              "Hello, I am here and ready for the delivery process.",
+              "Please let me know the delivery ETA when you are ready.",
+              "I will confirm receipt here after I review the delivery.",
+            ]
+      : [];
+  const orderFacts = [
+    { label: "Order ID", value: order.id },
+    { label: "Game", value: order.game_slug },
+    { label: "Category", value: order.category_slug },
+    { label: "Created", value: formatRoomDate(order.created_at) },
+    { label: "Delivery window", value: room.delivery_deadline ? formatRoomDate(room.delivery_deadline) : "Not set yet" },
+    { label: "Last sync", value: formatRoomDate(lastSyncedAt) },
+  ];
+  const trimmedMessageLength = messageInput.trim().length;
 
   return (
     <div className="module-page order-room-page">
@@ -583,269 +765,365 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
               </div>
             </article>
           </div>
-
-          {room.delivery_deadline ? (
-            <div className="order-room__banner">
-              <strong>Delivery deadline</strong>
-              <span>{new Date(room.delivery_deadline).toLocaleString()}</span>
-            </div>
-          ) : null}
-
-          {room.room_status === "completed" || room.resolution_status === "buyer_confirmed" ? (
-            <div className="order-room__celebration">
-              <strong>Successful trade</strong>
-              <span>
-                Sale successful for the seller and purchase successful for the buyer. Funds have
-                been released.
-              </span>
-            </div>
-          ) : null}
-
-          {room.room_status === "disputed" ? (
-            <div className="order-room__warning">
-              <strong>Dispute in progress</strong>
-              <span>
-                The buyer reported a problem. Funds remain held on the platform until admin reviews
-                the case.
-              </span>
-            </div>
-          ) : null}
-
-          {room.resolution_status === "resolved_for_seller" ? (
-            <div className="order-room__celebration">
-              <strong>Admin resolved the dispute for the seller</strong>
-              <span>{room.resolution_note || "Held funds were released to the seller."}</span>
-            </div>
-          ) : null}
-
-          {room.resolution_status === "resolved_for_buyer" ? (
-            <div className="order-room__warning">
-              <strong>Admin resolved the dispute for the buyer</strong>
-              <span>{room.resolution_note || "Held funds were refunded to the buyer."}</span>
-            </div>
-          ) : null}
-
-          {sellerCanStartRoom ? (
-            <div className="order-room__setup">
-              <strong>Start the delivery room</strong>
-              <p>
-                Choose how long the room should stay active, then notify the buyer that the chat is
-                ready.
-              </p>
-              <div className="seller-form-grid">
-                <div>
-                  <label htmlFor="room-window">Delivery window in minutes</label>
-                  <input
-                    id="room-window"
-                    type="number"
-                    min="5"
-                    max="10080"
-                    step="5"
-                    value={sellerWindowMinutes}
-                    onChange={(event) => setSellerWindowMinutes(event.target.value)}
-                  />
+          <div className="order-room__workspace">
+            <div className="order-room__primary">
+              {room.delivery_deadline ? (
+                <div className="order-room__banner">
+                  <strong>Delivery deadline</strong>
+                  <span>{new Date(room.delivery_deadline).toLocaleString()}</span>
                 </div>
-              </div>
-              <div className="hero-actions">
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={handleStartRoom}
-                  disabled={isActionLoading}
-                >
-                  {isActionLoading ? "Starting..." : "Start Room"}
-                </button>
-              </div>
-            </div>
-          ) : null}
+              ) : null}
 
-          {room.room_status === "awaiting_seller" && isBuyer ? (
-            <div className="order-room__setup">
-              <strong>Waiting for the seller</strong>
-              <p>
-                The order exists, but the seller still needs to open the delivery room before you
-                can continue.
-              </p>
-            </div>
-          ) : null}
+              {room.room_status === "completed" || room.resolution_status === "buyer_confirmed" ? (
+                <div className="order-room__celebration">
+                  <strong>Successful trade</strong>
+                  <span>
+                    Sale successful for the seller and purchase successful for the buyer. Funds have
+                    been released.
+                  </span>
+                </div>
+              ) : null}
 
-          {buyerNeedsPayment ? (
-            <div className="auth-form order-room__payment-form order-room__payment-card">
-              <div className="order-room__payment-head">
-                <div>
-                  <strong>Secure payment hold</strong>
+              {room.room_status === "disputed" ? (
+                <div className="order-room__warning">
+                  <strong>Dispute in progress</strong>
+                  <span>
+                    The buyer reported a problem. Funds remain held on the platform until admin reviews
+                    the case.
+                  </span>
+                </div>
+              ) : null}
+
+              {room.resolution_status === "resolved_for_seller" ? (
+                <div className="order-room__celebration">
+                  <strong>Admin resolved the dispute for the seller</strong>
+                  <span>{room.resolution_note || "Held funds were released to the seller."}</span>
+                </div>
+              ) : null}
+
+              {room.resolution_status === "resolved_for_buyer" ? (
+                <div className="order-room__warning">
+                  <strong>Admin resolved the dispute for the buyer</strong>
+                  <span>{room.resolution_note || "Held funds were refunded to the buyer."}</span>
+                </div>
+              ) : null}
+
+              {sellerCanStartRoom ? (
+                <div className="order-room__setup">
+                  <strong>Start the delivery room</strong>
                   <p>
-                    Complete payment through Stripe Checkout. After Stripe confirms the payment,
-                    the funds stay held and the order chat opens automatically.
+                    Choose how long the room should stay active, then notify the buyer that the chat is
+                    ready.
+                  </p>
+                  <div className="seller-form-grid">
+                    <div>
+                      <label htmlFor="room-window">Delivery window in minutes</label>
+                      <input
+                        id="room-window"
+                        type="number"
+                        min="5"
+                        max="10080"
+                        step="5"
+                        value={sellerWindowMinutes}
+                        onChange={(event) => setSellerWindowMinutes(event.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="hero-actions">
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={handleStartRoom}
+                      disabled={isActionLoading}
+                    >
+                      {isActionLoading ? "Starting..." : "Start Room"}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {room.room_status === "awaiting_seller" && isBuyer ? (
+                <div className="order-room__setup">
+                  <strong>Waiting for the seller</strong>
+                  <p>
+                    The order exists, but the seller still needs to open the delivery room before you
+                    can continue.
                   </p>
                 </div>
-                <div className="order-room__card-preview">
-                  <span>STRIPE CHECKOUT</span>
-                  <strong>${order.price_usd.toFixed(2)} USD</strong>
-                  <small>Protected hold</small>
+              ) : null}
+
+              {buyerNeedsPayment ? (
+                <div className="auth-form order-room__payment-form order-room__payment-card">
+                  <div className="order-room__payment-head">
+                    <div>
+                      <strong>Secure payment hold</strong>
+                      <p>
+                        Complete payment through Stripe Checkout. After Stripe confirms the payment,
+                        the funds stay held and the order chat opens automatically.
+                      </p>
+                    </div>
+                    <div className="order-room__card-preview">
+                      <span>STRIPE CHECKOUT</span>
+                      <strong>${order.price_usd.toFixed(2)} USD</strong>
+                      <small>Protected hold</small>
+                    </div>
+                  </div>
+
+                  <div className="hero-actions">
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={handleStripeCheckout}
+                      disabled={isActionLoading}
+                    >
+                      {isActionLoading ? "Opening Stripe..." : "Pay with Stripe"}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
-              <div className="hero-actions">
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={handleStripeCheckout}
-                  disabled={isActionLoading}
-                >
-                  {isActionLoading ? "Opening Stripe..." : "Pay with Stripe"}
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {sellerWaitingForBuyer ? (
-            <div className="order-room__setup">
-              <strong>Waiting for buyer payment hold</strong>
-              <p>
-                The room is open. Once the buyer completes Stripe Checkout, funds will be held and
-                the live chat will unlock automatically.
-              </p>
-            </div>
-          ) : null}
-
-          {order.delivery_mode === "instant" && deliveryDetails?.delivery_content?.trim() && deliveryDetails.unlocked_at ? (
-            <div className="order-room__delivery">
-              <span className="section-eyebrow">Protected delivery details</span>
-              <strong>Instant delivery payload</strong>
-              <p>
-                This content is protected inside the room because the buyer completed the payment
-                hold step.
-              </p>
-              <pre className="order-room__secret">{deliveryDetails.delivery_content}</pre>
-            </div>
-          ) : null}
-
-          <div className="order-room__chat">
-            <div className="order-room__chat-head">
-              <strong>Order Chat</strong>
-              <span>
-                {canSendMessages
-                  ? "Live now"
-                  : room.room_status === "awaiting_seller"
-                    ? "Locked until the seller starts the room"
-                    : "Locked until the buyer completes the payment hold"}
-              </span>
-            </div>
-
-            {!canSendMessages ? (
-              <div className="order-room__chat-lock">
-                {room.room_status === "awaiting_seller"
-                  ? "Seller must press Start Room first."
-                  : "Customer must complete Stripe Checkout first, then chat opens automatically."}
-              </div>
-            ) : null}
-
-            <div className="order-room__messages">
-              {messages.length === 0 ? (
-                <div className="order-room__empty">
-                  <strong>No messages yet.</strong>
-                  <span>System updates and chat replies will appear here.</span>
+              {sellerWaitingForBuyer ? (
+                <div className="order-room__setup">
+                  <strong>Waiting for buyer payment hold</strong>
+                  <p>
+                    The room is open. Once the buyer completes Stripe Checkout, funds will be held and
+                    the live chat will unlock automatically.
+                  </p>
                 </div>
-              ) : (
-                messages.map((message) => {
-                  const profile = message.sender_id ? profiles[message.sender_id] : null;
-                  const senderLabel = message.is_system
-                    ? "System"
-                    : message.sender_id === viewerId
-                      ? "You"
-                      : message.sender_id === order.buyer_id
-                        ? `Buyer - ${buyerName}`
-                        : message.sender_id === order.seller_id
-                          ? `Seller - ${sellerName}`
-                          : profile?.full_name || "Participant";
+              ) : null}
 
-                  return (
+              {order.delivery_mode === "instant" && deliveryDetails?.delivery_content?.trim() && deliveryDetails.unlocked_at ? (
+                <div className="order-room__delivery">
+                  <div className="order-room__delivery-head">
+                    <div>
+                      <span className="section-eyebrow">Protected delivery details</span>
+                      <strong>Instant delivery payload</strong>
+                    </div>
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      onClick={() => handleCopyText(deliveryDetails.delivery_content!, "Delivery details")}
+                    >
+                      Copy delivery
+                    </button>
+                  </div>
+                  <p>
+                    This content is protected inside the room because the buyer completed the payment
+                    hold step.
+                  </p>
+                  <pre className="order-room__secret">{deliveryDetails.delivery_content}</pre>
+                </div>
+              ) : null}
+
+              <div className="order-room__chat">
+                <div className="order-room__chat-head">
+                  <div>
+                    <strong>Order Chat</strong>
+                    <span>
+                      {canSendMessages
+                        ? "Live now"
+                        : room.room_status === "awaiting_seller"
+                          ? "Locked until the seller starts the room"
+                          : "Locked until the buyer completes the payment hold"}
+                    </span>
+                  </div>
+                  <div className="order-room__chat-meta">
+                    <span>{canSendMessages ? "Protected room active" : "Awaiting next checkpoint"}</span>
+                    <small>Last sync: {formatRoomDate(lastSyncedAt)}</small>
+                  </div>
+                </div>
+
+                {!canSendMessages ? (
+                  <div className="order-room__chat-lock">
+                    {room.room_status === "awaiting_seller"
+                      ? "Seller must press Start Room first."
+                      : "Customer must complete Stripe Checkout first, then chat opens automatically."}
+                  </div>
+                ) : null}
+
+                {quickReplies.length > 0 ? (
+                  <div className="order-room__quick-replies">
+                    {quickReplies.map((reply) => (
+                      <button
+                        key={reply}
+                        type="button"
+                        className="order-room__quick-reply"
+                        onClick={() => {
+                          setMessageInput(reply);
+                          composerInputRef.current?.focus();
+                        }}
+                      >
+                        {reply}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="order-room__messages">
+                  {messages.length === 0 ? (
+                    <div className="order-room__empty">
+                      <strong>No messages yet.</strong>
+                      <span>System updates and chat replies will appear here.</span>
+                    </div>
+                  ) : (
+                    messages.map((message) => {
+                      const profile = message.sender_id ? profiles[message.sender_id] : null;
+                      const senderLabel = message.is_system
+                        ? "System"
+                        : message.sender_id === viewerId
+                          ? "You"
+                          : message.sender_id === order.buyer_id
+                            ? `Buyer - ${buyerName}`
+                            : message.sender_id === order.seller_id
+                              ? `Seller - ${sellerName}`
+                              : profile?.full_name || "Participant";
+
+                      return (
+                        <article
+                          key={message.id}
+                          className={
+                            message.is_system
+                              ? "order-room__message order-room__message--system"
+                              : message.sender_id === viewerId
+                                ? "order-room__message order-room__message--self"
+                                : "order-room__message"
+                          }
+                        >
+                          <div className="order-room__message-head">
+                            <strong>{senderLabel}</strong>
+                            <span>{new Date(message.created_at).toLocaleString()}</span>
+                          </div>
+                          <p>{message.message}</p>
+                        </article>
+                      );
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                <form className="order-room__composer" onSubmit={handleSendMessage}>
+                  <textarea
+                    ref={composerInputRef}
+                    rows={3}
+                    value={messageInput}
+                    onChange={(event) => setMessageInput(event.target.value)}
+                    onKeyDown={handleComposerKeyDown}
+                    placeholder={
+                      canSendMessages
+                        ? "Write your message here. Press Enter to send, Shift + Enter for a new line."
+                        : "Chat is locked until payment step is completed."
+                    }
+                    disabled={!canSendMessages || isActionLoading}
+                  />
+                  <div className="order-room__composer-actions">
+                    <span>{trimmedMessageLength} chars</span>
+                    <button
+                      className="primary-button"
+                      type="submit"
+                      disabled={!canSendMessages || isActionLoading || !messageInput.trim()}
+                    >
+                      {isActionLoading ? "Sending..." : "Send Message"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="order-room__actions">
+                <strong>Delivery Actions</strong>
+
+                {sellerCanMarkDelivered ? (
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={handleSellerDelivered}
+                    disabled={isActionLoading}
+                  >
+                    {isActionLoading ? "Working..." : "Seller: I Delivered The Info"}
+                  </button>
+                ) : null}
+
+                {buyerCanConfirm ? (
+                  <>
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={() => handleBuyerDecision("received")}
+                      disabled={isActionLoading}
+                    >
+                      {isActionLoading ? "Working..." : "Buyer: I Received It"}
+                    </button>
+                    <button
+                      className="ghost-button admin-reject-button"
+                      type="button"
+                      onClick={() => handleBuyerDecision("not_received")}
+                      disabled={isActionLoading}
+                    >
+                      Buyer: I Did Not Receive It
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            </div>
+
+            <aside className="order-room__sidebar">
+              <section className="order-room__insight order-room__insight--next">
+                <span className="section-eyebrow">What Happens Next</span>
+                <strong>{nextStepTitle}</strong>
+                <p>{nextStepDescription}</p>
+              </section>
+
+              <section className="order-room__insight">
+                <span className="section-eyebrow">Protection Summary</span>
+                <div className="order-room__insight-list">
+                  {protectionItems.map((item) => (
+                    <article key={item} className="order-room__insight-item">
+                      <strong>Protection</strong>
+                      <p>{item}</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <section className="order-room__insight">
+                <span className="section-eyebrow">Room Timeline</span>
+                <div className="order-room__timeline">
+                  {roomTimeline.map((step) => (
                     <article
-                      key={message.id}
+                      key={step.label}
                       className={
-                        message.is_system
-                          ? "order-room__message order-room__message--system"
-                          : message.sender_id === viewerId
-                            ? "order-room__message order-room__message--self"
-                            : "order-room__message"
+                        step.isDone
+                          ? "order-room__timeline-item order-room__timeline-item--done"
+                          : "order-room__timeline-item"
                       }
                     >
-                      <div className="order-room__message-head">
-                        <strong>{senderLabel}</strong>
-                        <span>{new Date(message.created_at).toLocaleString()}</span>
-                      </div>
-                      <p>{message.message}</p>
+                      <strong>{step.label}</strong>
+                      <span>{step.detail}</span>
+                      <small>{formatRoomDate(step.at)}</small>
                     </article>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+                  ))}
+                </div>
+              </section>
 
-            <form className="order-room__composer" onSubmit={handleSendMessage}>
-              <textarea
-                ref={composerInputRef}
-                rows={3}
-                value={messageInput}
-                onChange={(event) => setMessageInput(event.target.value)}
-                placeholder={
-                  canSendMessages
-                    ? "Write your message here..."
-                    : "Chat is locked until payment step is completed."
-                }
-                disabled={!canSendMessages || isActionLoading}
-              />
-              <div className="hero-actions">
-                <button
-                  className="primary-button"
-                  type="submit"
-                  disabled={!canSendMessages || isActionLoading || !messageInput.trim()}
-                >
-                  {isActionLoading ? "Sending..." : "Send Message"}
+              <section className="order-room__insight">
+                <span className="section-eyebrow">Order Facts</span>
+                <div className="order-room__facts">
+                  {orderFacts.map((fact) => (
+                    <div key={fact.label} className="order-room__fact">
+                      <strong>{fact.label}</strong>
+                      <span>{fact.value}</span>
+                    </div>
+                  ))}
+                </div>
+                <button className="ghost-button" type="button" onClick={() => handleCopyText(order.id, "Order ID")}>
+                  Copy Order ID
                 </button>
-              </div>
-            </form>
-          </div>
-
-          <div className="order-room__actions">
-            <strong>Delivery Actions</strong>
-
-            {sellerCanMarkDelivered ? (
-              <button
-                className="primary-button"
-                type="button"
-                onClick={handleSellerDelivered}
-                disabled={isActionLoading}
-              >
-                {isActionLoading ? "Working..." : "Seller: I Delivered The Info"}
-              </button>
-            ) : null}
-
-            {buyerCanConfirm ? (
-              <>
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={() => handleBuyerDecision("received")}
-                  disabled={isActionLoading}
-                >
-                  {isActionLoading ? "Working..." : "Buyer: I Received It"}
-                </button>
-                <button
-                  className="ghost-button admin-reject-button"
-                  type="button"
-                  onClick={() => handleBuyerDecision("not_received")}
-                  disabled={isActionLoading}
-                >
-                  Buyer: I Did Not Receive It
-                </button>
-              </>
-            ) : null}
+              </section>
+            </aside>
           </div>
 
           {error ? <p className="auth-feedback auth-feedback--error">{error}</p> : null}
           {success ? <p className="auth-feedback auth-feedback--success">{success}</p> : null}
+          {copyFeedback ? <p className="auth-feedback auth-feedback--success">{copyFeedback}</p> : null}
 
           <div className="hero-actions">
             {isSeller ? (

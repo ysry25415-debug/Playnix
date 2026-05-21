@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MarketplacePersonalizationPanel } from "@/components/marketplace/marketplace-personalization-panel";
 import { marketplaceGames } from "@/lib/marketplace-data";
 
 export default async function MarketplacePage({
@@ -72,8 +73,10 @@ export default async function MarketplacePage({
                   ))}
                 </div>
               </Link>
-            ))}
+              ))}
           </div>
+
+          <MarketplacePersonalizationPanel games={marketplaceGames} />
 
           {normalizedQuery && filteredGames.length === 0 ? (
             <div className="marketplace-empty">

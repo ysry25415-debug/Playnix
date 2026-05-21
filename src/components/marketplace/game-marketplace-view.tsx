@@ -19,6 +19,8 @@ import { type OfferWithImagesRow } from "@/lib/marketplace-types";
 import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 
+const RECENT_LANES_KEY = "playnix-recent-lanes";
+
 type GameMarketplaceViewProps = {
   game: MarketplaceGame;
   activeCategorySlug: string;
@@ -131,6 +133,40 @@ export function GameMarketplaceView({
       isMounted = false;
     };
   }, [activeCategory.slug, game.slug]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(RECENT_LANES_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const currentLane = {
+        slug: game.slug,
+        title: game.title,
+        categoryTitle: activeCategory.title,
+        href: `/marketplace/${game.slug}?category=${activeCategory.slug}`,
+        savedAt: Date.now(),
+      };
+
+      const nextRecentLanes = [
+        currentLane,
+        ...(Array.isArray(parsed) ? parsed : []).filter((item) => {
+          return !(
+            item &&
+            typeof item === "object" &&
+            item.slug === currentLane.slug &&
+            item.categoryTitle === currentLane.categoryTitle
+          );
+        }),
+      ].slice(0, 6);
+
+      window.localStorage.setItem(RECENT_LANES_KEY, JSON.stringify(nextRecentLanes));
+    } catch {
+      // Ignore storage errors and keep the marketplace browsing experience uninterrupted.
+    }
+  }, [activeCategory.slug, activeCategory.title, game.slug, game.title]);
 
   async function handleBuy(offer: OfferWithImagesRow) {
     setError("");
@@ -275,6 +311,21 @@ export function GameMarketplaceView({
             <span>{category.description}</span>
           </Link>
         ))}
+      </div>
+
+      <div className="marketplace-trust-grid">
+        <article className="marketplace-trust-card">
+          <strong>Protected checkout</strong>
+          <p>Buyer funds stay controlled until the order reaches the correct delivery checkpoint.</p>
+        </article>
+        <article className="marketplace-trust-card">
+          <strong>Seller signals</strong>
+          <p>Users can compare category relevance, delivery mode, stock, and seller positioning much faster.</p>
+        </article>
+        <article className="marketplace-trust-card">
+          <strong>Live order follow-up</strong>
+          <p>Each completed purchase moves into a live room for updates, confirmation, and dispute protection.</p>
+        </article>
       </div>
 
       {error ? <p className="auth-feedback auth-feedback--error">{error}</p> : null}
