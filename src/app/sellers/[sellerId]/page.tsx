@@ -1,5 +1,4 @@
-import { notFound } from "next/navigation";
-
+import { SellerPublicProfileClientPage } from "@/components/marketplace/seller-public-profile-client-page";
 import { SellerPublicProfileView } from "@/components/marketplace/seller-public-profile-view";
 import { loadPublicSellerProfile } from "@/lib/public-marketplace";
 
@@ -11,9 +10,9 @@ export default async function SellerPublicProfilePage({
   const { sellerId } = await params;
   const data = await loadPublicSellerProfile(sellerId);
 
-  if (!data) {
-    notFound();
+  if (data) {
+    return <SellerPublicProfileView data={data} />;
   }
 
-  return <SellerPublicProfileView data={data} />;
+  return <SellerPublicProfileClientPage sellerId={sellerId} />;
 }
