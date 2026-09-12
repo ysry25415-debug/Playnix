@@ -165,6 +165,10 @@ export function OfferDetailView({ data }: OfferDetailViewProps) {
                   Open Seller Profile
                 </Link>
               </div>
+              <p className="offer-detail-payment-note">
+                <span aria-hidden="true">✓</span>
+                Protected payment — delivery begins after payment confirmation.
+              </p>
             </div>
           </div>
 
@@ -190,6 +194,28 @@ export function OfferDetailView({ data }: OfferDetailViewProps) {
                   <strong>Visible seller identity</strong>
                   <p>You can inspect the seller storefront, offers, and recent buyer feedback before ordering.</p>
                 </article>
+              </div>
+
+              <div className="offer-detail-purchase-flow">
+                <span className="section-eyebrow">What happens after purchase</span>
+                <ol>
+                  <li>
+                    <strong>Secure payment</strong>
+                    <span>Complete checkout before the order is opened.</span>
+                  </li>
+                  <li>
+                    <strong>Seller notified</strong>
+                    <span>The seller receives the paid order and delivery details.</span>
+                  </li>
+                  <li>
+                    <strong>Delivery</strong>
+                    <span>Chat orders continue in a private guided delivery room.</span>
+                  </li>
+                  <li>
+                    <strong>Confirm or dispute</strong>
+                    <span>Confirm delivery, or use protected support if something is wrong.</span>
+                  </li>
+                </ol>
               </div>
             </section>
 

@@ -3921,6 +3921,28 @@ button,
   gap: 6px;
 }
 
+.offer-detail-hero__content p.offer-detail-payment-note {
+  margin: -2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #b6ff8e;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.offer-detail-payment-note span {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(182, 255, 142, 0.14);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
 .offer-detail-grid {
   display: grid;
   gap: 18px;
@@ -3928,6 +3950,63 @@ button,
 
 .offer-detail-benefit strong {
   font-size: 0.94rem;
+}
+
+.offer-detail-purchase-flow {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.16);
+}
+
+.offer-detail-purchase-flow ol {
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  list-style: none;
+  counter-reset: purchase-step;
+}
+
+.offer-detail-purchase-flow li {
+  position: relative;
+  min-width: 0;
+  padding: 14px 12px 14px 44px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.16);
+  background: rgba(5, 10, 14, 0.54);
+  counter-increment: purchase-step;
+}
+
+.offer-detail-purchase-flow li::before {
+  content: counter(purchase-step);
+  position: absolute;
+  top: 14px;
+  left: 12px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(var(--playnix-accent-rgb), 0.18);
+  color: #b6ff8e;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.offer-detail-purchase-flow strong,
+.offer-detail-purchase-flow span:not(.section-eyebrow) {
+  display: block;
+}
+
+.offer-detail-purchase-flow strong {
+  font-size: 0.88rem;
+}
+
+.offer-detail-purchase-flow span:not(.section-eyebrow) {
+  margin-top: 5px;
+  color: var(--playnix-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.5;
 }
 
 .seller-pending-queue {
@@ -4071,6 +4150,10 @@ button,
     grid-template-columns: 1fr;
   }
 
+  .offer-detail-purchase-flow ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .offer-detail-gallery {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -4098,6 +4181,7 @@ button,
 
   .seller-review-grid,
   .offer-detail-benefits,
+  .offer-detail-purchase-flow ol,
   .offer-detail-gallery {
     grid-template-columns: 1fr;
   }
