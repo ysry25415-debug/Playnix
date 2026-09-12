@@ -130,7 +130,7 @@ export function GameMarketplaceView({
           .order("sort_order", { ascending: true })
           .order("created_at", { ascending: true }),
         sellerIds.length
-          ? supabase.from("profiles").select("id,full_name,avatar_url,role").in("id", sellerIds)
+          ? supabase.from("marketplace_seller_profiles").select("id,full_name,avatar_url,role").in("id", sellerIds)
           : Promise.resolve({ data: [], error: null }),
         sellerIds.length
           ? supabase.from("order_reviews").select("*").in("seller_id", sellerIds).order("created_at", { ascending: false })

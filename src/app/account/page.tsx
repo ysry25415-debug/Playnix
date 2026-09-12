@@ -76,6 +76,24 @@ async function buildOptimizedAvatarDataUrl(file: File): Promise<string> {
   return canvas.toDataURL("image/webp", 0.9);
 }
 
+async function syncPublicProfile(user: User, displayName: string, avatarUrl: string): Promise<boolean> {
+  const { data: publicProfile, error: publicProfileError } = await supabase
+    .from("profiles")
+    .update({
+      full_name: displayName,
+      avatar_url: avatarUrl || null,
+    })
+    .eq("id", user.id)
+    .select("id")
+    .maybeSingle();
+
+  if (!publicProfileError && publicProfile) {
+    return true;
+  }
+
+  return Boolean(await syncCurrentUserProfile(supabase));
+}
+
 export default function AccountPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -134,6 +152,13 @@ export default function AccountPage() {
       setAvatarUrl(typeof metadataAvatar === "string" ? metadataAvatar : "");
       setRole(getOptimisticRole(currentUser));
       setIsLoading(false);
+      void syncPublicProfile(
+        currentUser,
+        typeof metadataName === "string" && metadataName.trim()
+          ? metadataName.trim()
+          : (currentUser.email?.split("@")[0] ?? "Player"),
+        typeof metadataAvatar === "string" ? metadataAvatar : ""
+      );
       void loadRole();
     }
 
@@ -215,25 +240,11 @@ export default function AccountPage() {
       return;
     }
 
-    const { data: publicProfile, error: publicProfileError } = await supabase
-      .from("profiles")
-      .update({
-        full_name: trimmedName,
-        avatar_url: trimmedAvatar || null,
-      })
-      .eq("id", user.id)
-      .select("id")
-      .maybeSingle();
+    const publicProfileSynced = await syncPublicProfile(user, trimmedName, trimmedAvatar);
 
-    if (publicProfileError || !publicProfile) {
-      const syncedRole = await syncCurrentUserProfile(supabase);
-
-      if (!syncedRole) {
-        setError("Your account name was saved, but the public seller name could not be synced. Please try again.");
-        return;
-      }
-
-      setRole(syncedRole);
+    if (!publicProfileSynced) {
+      setError("Your account name was saved, but the public seller name could not be synced. Please try again.");
+      return;
     }
 
     await fetchRoleForCurrentUser(supabase);

@@ -36,7 +36,11 @@ export function SellerPublicProfileClientPage({ sellerId }: SellerPublicProfileC
       setError("");
 
       const [profileResult, offersResult, reviewsResult] = await Promise.all([
-        supabase.from("profiles").select("id,full_name,avatar_url,role").eq("id", sellerId).maybeSingle(),
+        supabase
+          .from("marketplace_seller_profiles")
+          .select("id,full_name,avatar_url,role")
+          .eq("id", sellerId)
+          .maybeSingle(),
         supabase
           .from("offers")
           .select("*")

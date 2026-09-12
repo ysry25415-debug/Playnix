@@ -233,6 +233,7 @@ before update on public.order_reviews
 for each row execute function public.set_updated_at();
 
 alter table public.offers enable row level security;
+alter table public.profiles enable row level security;
 alter table public.orders enable row level security;
 alter table public.offer_images enable row level security;
 alter table public.offer_private_deliveries enable row level security;
@@ -241,6 +242,30 @@ alter table public.order_trade_rooms enable row level security;
 alter table public.order_messages enable row level security;
 alter table public.order_reviews enable row level security;
 alter table public.user_notifications enable row level security;
+
+drop policy if exists "profiles_select_marketplace_identity" on public.profiles;
+drop policy if exists "profiles_select_own_identity" on public.profiles;
+create policy "profiles_select_own_identity"
+on public.profiles for select
+to authenticated
+using (id = auth.uid());
+
+drop policy if exists "profiles_update_own_public_identity" on public.profiles;
+create policy "profiles_update_own_public_identity"
+on public.profiles for update
+to authenticated
+using (id = auth.uid())
+with check (id = auth.uid());
+
+create or replace view public.marketplace_seller_profiles
+with (security_barrier = true)
+as
+select id, full_name, avatar_url, role
+from public.profiles
+where role in ('seller', 'admin');
+
+grant select on public.marketplace_seller_profiles to authenticated;
+notify pgrst, 'reload schema';
 
 drop policy if exists "offers_select_market_or_owner" on public.offers;
 create policy "offers_select_market_or_owner"
