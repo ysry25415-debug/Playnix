@@ -78,42 +78,7 @@ export function OfferDetailView({ data }: OfferDetailViewProps) {
     }
 
     setBuying(true);
-    const { data: sessionData } = await supabase.auth.getSession();
-    const accessToken = sessionData.session?.access_token;
-
-    if (!accessToken) {
-      setBuying(false);
-      setError("Please log in again.");
-      return;
-    }
-
-    const response = await fetch("/api/orders/place", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        offerId: data.offer.id,
-      }),
-    });
-
-    const payload = await response.json().catch(() => null);
-    setBuying(false);
-
-    if (!response.ok) {
-      setError(payload?.error ?? "Could not place this order.");
-      return;
-    }
-
-    const nextOrderId = typeof payload?.orderId === "string" ? payload.orderId : null;
-    if (nextOrderId) {
-      router.push(`/orders/${nextOrderId}`);
-      router.refresh();
-      return;
-    }
-
-    setSuccess("Order placed successfully.");
+    router.push(`/checkout/${data.offer.id}`);
   }
 
   const sellerReviewLabel = useMemo(() => {
@@ -189,7 +154,7 @@ export function OfferDetailView({ data }: OfferDetailViewProps) {
                   </Link>
                 ) : viewerRole === "customer" ? (
                   <button className="primary-button" type="button" onClick={handleBuy} disabled={buying}>
-                    {buying ? "Placing Order..." : "Buy Now"}
+                    {buying ? "Opening Checkout..." : "Buy Now"}
                   </button>
                 ) : (
                   <Link className="primary-button" href="/auth/login">
