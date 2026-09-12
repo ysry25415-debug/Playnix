@@ -18,7 +18,6 @@ import { getPrimaryOfferImage } from "@/lib/offer-images";
 import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { type MarketplaceGame } from "@/lib/marketplace-data";
 import { type OfferWithImagesRow } from "@/lib/marketplace-types";
-import { triggerPageLoader } from "@/lib/page-loader-events";
 import {
   getSellerRatingSummary,
   normalizeOrderReviewRow,
@@ -53,7 +52,6 @@ export function GameMarketplaceView({
   const [viewerRole, setViewerRole] = useState<AppRole | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<string | null>(null);
 
@@ -232,7 +230,6 @@ export function GameMarketplaceView({
 
   async function handleBuy(offer: OfferWithImagesRow) {
     setError("");
-    setSuccess("");
 
     if (!viewerId) {
       setError("Please log in first.");
@@ -250,44 +247,7 @@ export function GameMarketplaceView({
     }
 
     setBuyingId(offer.id);
-    const { data: sessionData } = await supabase.auth.getSession();
-    const accessToken = sessionData.session?.access_token;
-
-    if (!accessToken) {
-      setBuyingId(null);
-      setError("Please log in again.");
-      return;
-    }
-
-    const response = await fetch("/api/orders/place", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        offerId: offer.id,
-      }),
-    });
-
-    const payload = await response.json().catch(() => null);
-    setBuyingId(null);
-
-    if (!response.ok) {
-      setError(payload?.error ?? "Could not place this order.");
-      return;
-    }
-
-    const nextOrderId = typeof payload?.orderId === "string" ? payload.orderId : null;
-
-    if (nextOrderId) {
-      triggerPageLoader();
-      router.push(`/orders/${nextOrderId}`);
-      router.refresh();
-      return;
-    }
-
-    setSuccess("Order placed successfully.");
+    router.push(`/checkout/${offer.id}`);
   }
 
   const canCreateOffers = viewerRole === "seller" || viewerRole === "admin";
@@ -391,8 +351,6 @@ export function GameMarketplaceView({
       </div>
 
       {error ? <p className="auth-feedback auth-feedback--error">{error}</p> : null}
-      {success ? <p className="auth-feedback auth-feedback--success">{success}</p> : null}
-
       {isLoading ? (
         <p>Loading offers...</p>
       ) : filteredOffers.length === 0 ? (

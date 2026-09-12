@@ -42,6 +42,13 @@ export async function POST(request: NextRequest) {
 
   const normalizedOrder = normalizeOrderRow(order as Record<string, unknown>);
 
+  if (normalizedOrder.status === "pending") {
+    return NextResponse.json(
+      { error: "Complete secure checkout before opening the delivery room." },
+      { status: 409 }
+    );
+  }
+
   const canAccess =
     role === "admin" ||
     normalizedOrder.buyer_id === user.id ||

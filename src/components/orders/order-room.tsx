@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { OrderReviewPanel } from "@/components/orders/order-review-panel";
@@ -46,7 +45,6 @@ function formatRoomDate(value: string | null | undefined) {
 }
 
 export function OrderRoom({ orderId }: OrderRoomProps) {
-  const searchParams = useSearchParams();
   const [order, setOrder] = useState<OrderRow | null>(null);
   const [room, setRoom] = useState<OrderTradeRoomRow | null>(null);
   const [deliveryDetails, setDeliveryDetails] = useState<OrderDeliveryDetailsRow | null>(null);
@@ -64,7 +62,6 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const bootstrapTriedRef = useRef(false);
   const composerInputRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const stripeConfirmTriedRef = useRef(false);
   const copyFeedbackTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -269,49 +266,6 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
     };
   }, []);
 
-  useEffect(() => {
-    const sessionId = searchParams.get("stripe_session_id");
-
-    if (!sessionId || stripeConfirmTriedRef.current) {
-      return;
-    }
-
-    stripeConfirmTriedRef.current = true;
-
-    async function confirmStripePayment() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-
-      if (!accessToken) {
-        setError("Please log in again to confirm this payment.");
-        return;
-      }
-
-      setIsActionLoading(true);
-      const response = await fetch("/api/orders/room/confirm-stripe-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ orderId, sessionId }),
-      });
-      const payload = await response.json().catch(() => null);
-      setIsActionLoading(false);
-
-      if (!response.ok) {
-        setError(payload?.error ?? "Could not confirm Stripe payment.");
-        return;
-      }
-
-      setSuccess("Stripe payment confirmed. Chat is now open.");
-      await refreshRoomState();
-      window.history.replaceState(null, "", `/orders/${orderId}`);
-    }
-
-    void confirmStripePayment();
-  }, [orderId, searchParams]);
-
   async function callOrderApi(
     endpoint: string,
     payload: Record<string, unknown>,
@@ -415,18 +369,6 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
     if (payload) {
       await refreshRoomState();
     }
-  }
-
-  async function handleStripeCheckout() {
-    const payload = await callOrderApi("/api/orders/room/create-stripe-session", { orderId });
-    const checkoutUrl = typeof payload?.url === "string" ? payload.url : "";
-
-    if (!checkoutUrl) {
-      setError("Stripe did not return a checkout link.");
-      return;
-    }
-
-    window.location.assign(checkoutUrl);
   }
 
   async function submitMessage() {
@@ -562,7 +504,6 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const isBuyer = viewerId === order.buyer_id;
   const isSeller = viewerId === order.seller_id;
   const canSendMessages = room.room_status === "open" && room.payment_status !== "unpaid";
-  const buyerNeedsPayment = isBuyer && room.room_status === "open" && room.payment_status === "unpaid";
   const sellerWaitingForBuyer = isSeller && room.room_status === "open" && room.payment_status === "unpaid";
   const sellerCanStartRoom = isSeller && room.room_status === "awaiting_seller";
   const buyerCanConfirm =
@@ -603,9 +544,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
   const sellerProfileHref = `/sellers/${order.seller_id}`;
   const nextStepTitle = sellerCanStartRoom
     ? "Seller should open the room now."
-    : buyerNeedsPayment
-      ? "Buyer should complete secure payment hold."
-      : sellerWaitingForBuyer
+    : sellerWaitingForBuyer
         ? "Wait for buyer payment confirmation."
         : sellerCanMarkDelivered
           ? "Seller should send the delivery and mark it complete."
@@ -618,9 +557,7 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                 : "Keep the room updated until the next checkpoint.";
   const nextStepDescription = sellerCanStartRoom
     ? "Set the delivery window, open the room, and let the buyer know where the conversation will happen."
-    : buyerNeedsPayment
-      ? "Once Stripe confirms the payment, the funds stay protected on-platform and the live chat unlocks automatically."
-      : sellerWaitingForBuyer
+    : sellerWaitingForBuyer
         ? "No seller payout is counted yet. The room becomes active after the buyer finishes the payment hold step."
         : sellerCanMarkDelivered
           ? "Use the room chat to explain what you sent, then mark delivery so the buyer can verify it with confidence."
@@ -860,36 +797,6 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
                       </span>
                     </div>
                   ) : null}
-                </div>
-              ) : null}
-
-              {buyerNeedsPayment ? (
-                <div className="auth-form order-room__payment-form order-room__payment-card">
-                  <div className="order-room__payment-head">
-                    <div>
-                      <strong>Secure payment hold</strong>
-                      <p>
-                        Complete payment through Stripe Checkout. After Stripe confirms the payment,
-                        the funds stay held and the order chat opens automatically.
-                      </p>
-                    </div>
-                    <div className="order-room__card-preview">
-                      <span>STRIPE CHECKOUT</span>
-                      <strong>${order.price_usd.toFixed(2)} USD</strong>
-                      <small>Protected hold</small>
-                    </div>
-                  </div>
-
-                  <div className="hero-actions">
-                    <button
-                      className="primary-button"
-                      type="button"
-                      onClick={handleStripeCheckout}
-                      disabled={isActionLoading}
-                    >
-                      {isActionLoading ? "Opening Stripe..." : "Pay with Stripe"}
-                    </button>
-                  </div>
                 </div>
               ) : null}
 

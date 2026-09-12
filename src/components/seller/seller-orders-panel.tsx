@@ -50,6 +50,7 @@ export function SellerOrdersPanel() {
     const ordersQuery = supabase
       .from("orders")
       .select("*")
+      .neq("status", "pending")
       .order("created_at", { ascending: false });
 
     const { data, error: ordersError } =
@@ -151,12 +152,12 @@ export function SellerOrdersPanel() {
   const stats = useMemo(() => {
     const waitingForSeller = orders.filter((order) => {
       const room = roomsByOrderId[order.id];
-      return room?.room_status === "awaiting_seller" && room.payment_status === "unpaid";
+      return room?.room_status === "awaiting_seller" && room.payment_status === "held";
     }).length;
 
     return {
       total: orders.length,
-      pending: orders.filter((order) => order.status === "pending").length,
+      pending: orders.filter((order) => order.status === "paid").length,
       delivered: orders.filter((order) => order.status === "delivered").length,
       waitingForSeller,
     };
@@ -165,7 +166,7 @@ export function SellerOrdersPanel() {
   const waitingOrders = useMemo(() => {
     return orders.filter((order) => {
       const room = roomsByOrderId[order.id];
-      return room?.room_status === "awaiting_seller" && room.payment_status === "unpaid";
+      return room?.room_status === "awaiting_seller" && room.payment_status === "held";
     });
   }, [orders, roomsByOrderId]);
 
@@ -191,7 +192,7 @@ export function SellerOrdersPanel() {
         </article>
         <article className="seller-module__card">
           <strong>{stats.pending}</strong>
-          <span>Pending delivery</span>
+          <span>Paid, awaiting delivery</span>
         </article>
         <article className="seller-module__card">
           <strong>{stats.waitingForSeller}</strong>

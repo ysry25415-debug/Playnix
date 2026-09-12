@@ -14,9 +14,7 @@ function getAppOrigin(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const auth = await requireApiUser(request);
-  if ("error" in auth) {
-    return auth.error;
-  }
+  if ("error" in auth) return auth.error;
 
   if (auth.role !== "customer") {
     return NextResponse.json({ error: "Only customer accounts can place orders." }, { status: 403 });
@@ -24,7 +22,6 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => null);
   const offerId = typeof body?.offerId === "string" ? body.offerId : "";
-
   if (!offerId) {
     return NextResponse.json({ error: "Offer id is required." }, { status: 400 });
   }
