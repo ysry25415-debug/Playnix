@@ -135,6 +135,7 @@ export function OfferDetailView({ data }: OfferDetailViewProps) {
                   {data.seller.avatar_url ? <img src={data.seller.avatar_url} alt="" /> : avatarFallback}
                 </span>
                 <div className="offer-detail-seller__copy">
+                  <span className="offer-detail-seller__label">Account name</span>
                   <span className="offer-detail-seller__name-row">
                     <strong>{displayName}</strong>
                     {data.seller.role === "seller" || data.seller.role === "admin" ? <SellerVerifiedBadge /> : null}

@@ -85,6 +85,17 @@ async function readRoleFromApi(
   return role;
 }
 
+export async function syncCurrentUserProfile(supabase: SupabaseClient): Promise<AppRole | null> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const session = sessionData.session;
+
+  if (!session?.user || !session.access_token) {
+    return null;
+  }
+
+  return readRoleFromApi(supabase, session.access_token, session.user.id);
+}
+
 export async function fetchRoleForCurrentUser(
   supabase: SupabaseClient
 ): Promise<AppRole | null> {

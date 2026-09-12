@@ -8,7 +8,12 @@ import { type User } from "@supabase/supabase-js";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { TransactionHistoryPanel } from "@/components/shared/transaction-history-panel";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
-import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
+import {
+  fetchRoleForCurrentUser,
+  getOptimisticRole,
+  syncCurrentUserProfile,
+  type AppRole,
+} from "@/lib/client-role";
 import { triggerPageLoader } from "@/lib/page-loader-events";
 import { supabase } from "@/lib/supabase-client";
 
@@ -210,9 +215,30 @@ export default function AccountPage() {
       return;
     }
 
+    const { data: publicProfile, error: publicProfileError } = await supabase
+      .from("profiles")
+      .update({
+        full_name: trimmedName,
+        avatar_url: trimmedAvatar || null,
+      })
+      .eq("id", user.id)
+      .select("id")
+      .maybeSingle();
+
+    if (publicProfileError || !publicProfile) {
+      const syncedRole = await syncCurrentUserProfile(supabase);
+
+      if (!syncedRole) {
+        setError("Your account name was saved, but the public seller name could not be synced. Please try again.");
+        return;
+      }
+
+      setRole(syncedRole);
+    }
+
     await fetchRoleForCurrentUser(supabase);
     setUser(data.user ?? user);
-    setSuccess("Profile updated successfully.");
+    setSuccess("Profile updated. Your account name is now shown on your offers.");
   }
 
   async function handleLogout() {
