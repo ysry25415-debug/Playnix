@@ -415,7 +415,6 @@ export function GameMarketplaceView({
                       {sellerAvatar ? <img src={sellerAvatar} alt="" /> : sellerAvatarFallback}
                     </span>
                     <span className="marketplace-offer-card__seller-copy">
-                      <span className="marketplace-offer-card__seller-label">Account name</span>
                       <span className="marketplace-offer-card__seller-name-row">
                         <strong>{sellerName}</strong>
                         {sellerVerified ? <SellerVerifiedBadge /> : null}

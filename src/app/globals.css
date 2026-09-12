@@ -3668,15 +3668,6 @@ button,
   gap: 2px;
 }
 
-.marketplace-offer-card__seller-copy .marketplace-offer-card__seller-label,
-.offer-detail-seller__copy .offer-detail-seller__label {
-  color: var(--playnix-text-secondary);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .marketplace-offer-card__seller-name-row,
 .offer-detail-seller__name-row,
 .seller-public-hero__title-row {
