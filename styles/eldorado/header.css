@@ -170,8 +170,9 @@
 
 .eld-header .eld-header__search-signal {
   color: var(--eld-text-secondary);
-  font-size: 0.62rem;
-  letter-spacing: 0.03em;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .eld-header .eld-header__search-signal + .eld-header__search-signal::before {
