@@ -965,6 +965,75 @@ button,
   margin-top: 28px;
 }
 
+.popular-markets__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 22px;
+}
+
+.popular-market-group {
+  min-height: 230px;
+  padding: 28px;
+  border: 1px solid rgba(114, 129, 157, 0.16);
+  border-radius: 12px;
+  background: rgba(25, 26, 37, 0.86);
+}
+
+.popular-market-group--wide {
+  grid-column: 1;
+}
+
+.popular-market-group:not(.popular-market-group--wide) {
+  grid-column: 2;
+}
+
+.popular-market-group h2 {
+  margin: 0 0 22px;
+  color: var(--playnix-text-primary);
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+}
+
+.popular-market-group__items {
+  display: grid;
+  gap: 12px 30px;
+}
+
+.popular-market-group--wide .popular-market-group__items {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.popular-market-link {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  gap: 12px;
+  color: var(--playnix-text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.popular-market-link:hover,
+.popular-market-link:focus-visible {
+  color: var(--playnix-accent-soft);
+  transform: translateX(3px);
+}
+
+.popular-market-link__icon {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.3);
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(var(--playnix-accent-rgb), 0.28), rgba(16, 21, 30, 0.9));
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
 .game-showcase-card {
   position: relative;
   display: flex;
@@ -2909,8 +2978,15 @@ button,
   .seller-module__highlights,
   .seller-module__stats,
   .support-page__steps,
-  .support-page__actions {
+  .support-page__actions,
+  .popular-markets__grid {
     grid-template-columns: 1fr;
+  }
+
+  .popular-market-group,
+  .popular-market-group--wide,
+  .popular-market-group:not(.popular-market-group--wide) {
+    grid-column: auto;
   }
 
   .module-page h1 {
