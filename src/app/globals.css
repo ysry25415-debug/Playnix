@@ -2316,6 +2316,46 @@ button,
   color: var(--playnix-text-secondary);
 }
 
+.marketplace-offer-filters {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.18);
+  background: rgba(8, 13, 19, 0.7);
+}
+
+.marketplace-offer-filters label {
+  display: grid;
+  gap: 6px;
+  min-width: min(100%, 180px);
+  color: var(--playnix-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.marketplace-offer-filters input,
+.marketplace-offer-filters select {
+  min-height: 42px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.22);
+  background: rgba(8, 14, 20, 0.9);
+  color: var(--playnix-text-primary);
+  padding: 0 12px;
+}
+
+.marketplace-offer-filters__reset {
+  min-height: 42px;
+}
+
+.marketplace-offer-card__seller-new,
+.seller-public-no-reviews {
+  color: var(--playnix-text-secondary);
+  font-size: 0.78rem;
+}
+
 .marketplace-offer-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

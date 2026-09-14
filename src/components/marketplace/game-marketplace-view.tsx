@@ -54,6 +54,9 @@ export function GameMarketplaceView({
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<string | null>(null);
+  const [deliveryFilter, setDeliveryFilter] = useState<"all" | "instant" | "chat">("all");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [sortBy, setSortBy] = useState<"relevance" | "price-low" | "price-high" | "seller-rating">("relevance");
 
   const activeCategory =
     game.categories.find((category) => category.slug === activeCategorySlug) ?? game.categories[0];
@@ -264,23 +267,41 @@ export function GameMarketplaceView({
   }, [activeCategory.slug, game.categories, game.slug, normalizedSearchQuery, searchQuery]);
 
   const filteredOffers = useMemo(() => {
-    if (!normalizedSearchQuery) {
-      return offers;
-    }
+    const parsedMaxPrice = Number(maxPrice);
+    const hasMaxPrice = maxPrice.trim() !== "" && Number.isFinite(parsedMaxPrice) && parsedMaxPrice >= 0;
 
-    return offers.filter((offer) => {
+    const nextOffers = offers.filter((offer) => {
       const searchableText = [
         offer.title,
         offer.description,
         offer.delivery_time,
         offer.delivery_mode,
+        sellerProfiles[offer.seller_id]?.full_name ?? "",
       ]
         .join(" ")
         .toLowerCase();
 
-      return searchableText.includes(normalizedSearchQuery);
+      return (
+        (!normalizedSearchQuery || searchableText.includes(normalizedSearchQuery)) &&
+        (deliveryFilter === "all" || offer.delivery_mode === deliveryFilter) &&
+        (!hasMaxPrice || offer.price_usd <= parsedMaxPrice)
+      );
     });
-  }, [normalizedSearchQuery, offers]);
+
+    return [...nextOffers].sort((left, right) => {
+      if (sortBy === "price-low") return left.price_usd - right.price_usd;
+      if (sortBy === "price-high") return right.price_usd - left.price_usd;
+      if (sortBy === "seller-rating") {
+        return (
+          (sellerRatings[right.seller_id]?.displayedAverage ?? 0) -
+          (sellerRatings[left.seller_id]?.displayedAverage ?? 0)
+        );
+      }
+      return 0;
+    });
+  }, [deliveryFilter, maxPrice, normalizedSearchQuery, offers, sellerProfiles, sellerRatings, sortBy]);
+
+  const hasActiveFilters = deliveryFilter !== "all" || maxPrice.trim() !== "" || sortBy !== "relevance";
 
   return (
     <div className="marketplace-game-page">
@@ -350,14 +371,58 @@ export function GameMarketplaceView({
         </article>
       </div>
 
+      <div className="marketplace-offer-filters" aria-label="Offer filters">
+        <label>
+          Delivery
+          <select value={deliveryFilter} onChange={(event) => setDeliveryFilter(event.target.value as "all" | "instant" | "chat")}>
+            <option value="all">All delivery types</option>
+            <option value="instant">Instant delivery</option>
+            <option value="chat">Live delivery</option>
+          </select>
+        </label>
+        <label>
+          Maximum price
+          <input
+            type="number"
+            min="0"
+            inputMode="decimal"
+            placeholder="Any price"
+            value={maxPrice}
+            onChange={(event) => setMaxPrice(event.target.value)}
+          />
+        </label>
+        <label>
+          Sort offers
+          <select value={sortBy} onChange={(event) => setSortBy(event.target.value as typeof sortBy)}>
+            <option value="relevance">Recommended</option>
+            <option value="seller-rating">Seller rating</option>
+            <option value="price-low">Price: low to high</option>
+            <option value="price-high">Price: high to low</option>
+          </select>
+        </label>
+        {hasActiveFilters ? (
+          <button
+            className="ghost-button marketplace-offer-filters__reset"
+            type="button"
+            onClick={() => {
+              setDeliveryFilter("all");
+              setMaxPrice("");
+              setSortBy("relevance");
+            }}
+          >
+            Reset filters
+          </button>
+        ) : null}
+      </div>
+
       {error ? <p className="auth-feedback auth-feedback--error">{error}</p> : null}
       {isLoading ? (
         <p>Loading offers...</p>
       ) : filteredOffers.length === 0 ? (
         <div className="marketplace-empty">
           <strong>
-            {normalizedSearchQuery
-              ? `No offers match "${searchQuery}" in ${activeCategory.title}.`
+            {normalizedSearchQuery || hasActiveFilters
+              ? `No offers match your search and filters in ${activeCategory.title}.`
               : `No live offers in ${activeCategory.title} yet.`}
           </strong>
           <span>
@@ -419,11 +484,11 @@ export function GameMarketplaceView({
                         <strong>{sellerName}</strong>
                         {sellerVerified ? <SellerVerifiedBadge /> : null}
                       </span>
-                      <RatingStars
-                        value={sellerRating.displayedAverage}
-                        showValue={false}
-                        size="sm"
-                      />
+                      {sellerRating.totalReviews > 0 ? (
+                        <RatingStars value={sellerRating.displayedAverage} total={sellerRating.totalReviews} size="sm" />
+                      ) : (
+                        <span className="marketplace-offer-card__seller-new">New seller — no reviews yet</span>
+                      )}
                     </span>
                   </Link>
                 </div>

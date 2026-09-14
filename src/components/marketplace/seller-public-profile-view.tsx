@@ -15,6 +15,7 @@ export function SellerPublicProfileView({ data }: SellerPublicProfileViewProps) 
   const displayName = data.profile.full_name || "Seller";
   const avatarFallback = displayName.slice(0, 1).toUpperCase();
   const featuredReview = data.reviews[0] ?? null;
+  const hasReviews = data.ratingSummary.totalReviews > 0;
 
   return (
     <main className="module-page seller-public-page">
@@ -34,17 +35,18 @@ export function SellerPublicProfileView({ data }: SellerPublicProfileViewProps) 
                 Browse this seller&apos;s active offers, recent buyer feedback, and delivery style
                 before placing an order.
               </p>
-              <RatingStars
-                value={data.ratingSummary.displayedAverage}
-                total={data.ratingSummary.totalReviews}
-              />
+              {hasReviews ? (
+                <RatingStars value={data.ratingSummary.displayedAverage} total={data.ratingSummary.totalReviews} />
+              ) : (
+                <span className="seller-public-no-reviews">New seller — no completed-order reviews yet</span>
+              )}
             </div>
           </div>
 
           <div className="seller-public-hero__stats">
             <article className="seller-public-stat">
-              <strong>{formatSellerRating(data.ratingSummary.displayedAverage)}</strong>
-              <span>Storefront score</span>
+              <strong>{hasReviews ? formatSellerRating(data.ratingSummary.displayedAverage) : "New"}</strong>
+              <span>{hasReviews ? "Storefront score" : "Seller reputation"}</span>
             </article>
             <article className="seller-public-stat">
               <strong>{data.offers.length}</strong>
@@ -55,7 +57,7 @@ export function SellerPublicProfileView({ data }: SellerPublicProfileViewProps) 
               <span>Completed orders</span>
             </article>
             <article className="seller-public-stat">
-              <strong>{Math.round(data.ratingSummary.positiveShare * 100)}%</strong>
+              <strong>{hasReviews ? `${Math.round(data.ratingSummary.positiveShare * 100)}%` : "—"}</strong>
               <span>Positive feedback</span>
             </article>
           </div>
@@ -71,8 +73,8 @@ export function SellerPublicProfileView({ data }: SellerPublicProfileViewProps) 
           <section className="seller-public-featured-review">
             <span className="section-eyebrow">Storefront opening state</span>
             <p>
-              This seller starts with a protected five-star storefront display. Real completed-order
-              reviews now shape the score gradually over time.
+              This seller has not received a completed-order review yet. Ratings appear only after verified buyers
+              complete an order.
             </p>
           </section>
         )}

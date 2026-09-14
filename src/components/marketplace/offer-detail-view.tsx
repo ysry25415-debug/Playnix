@@ -83,7 +83,7 @@ export function OfferDetailView({ data }: OfferDetailViewProps) {
 
   const sellerReviewLabel = useMemo(() => {
     if (data.ratingSummary.totalReviews === 0) {
-      return "Protected launch score";
+      return "No completed-order reviews yet";
     }
 
     return `${data.ratingSummary.totalReviews} completed-order reviews`;
@@ -139,7 +139,11 @@ export function OfferDetailView({ data }: OfferDetailViewProps) {
                     <strong>{displayName}</strong>
                     {data.seller.role === "seller" || data.seller.role === "admin" ? <SellerVerifiedBadge /> : null}
                   </span>
-                  <RatingStars value={data.ratingSummary.displayedAverage} total={data.ratingSummary.totalReviews} size="sm" />
+                  {data.ratingSummary.totalReviews > 0 ? (
+                    <RatingStars value={data.ratingSummary.displayedAverage} total={data.ratingSummary.totalReviews} size="sm" />
+                  ) : (
+                    <span>New seller — no reviews yet</span>
+                  )}
                   <span>{data.completedOrders} completed orders</span>
                 </div>
               </Link>
@@ -229,8 +233,8 @@ export function OfferDetailView({ data }: OfferDetailViewProps) {
 
               {data.reviews.length === 0 ? (
                 <p className="auth-feedback auth-feedback--success">
-                  This seller has not collected completed-order feedback yet. The storefront still shows
-                  the protected launch score.
+                  This seller has not collected completed-order feedback yet. Reviews appear after verified buyers
+                  complete an order.
                 </p>
               ) : (
                 <div className="seller-review-grid">
