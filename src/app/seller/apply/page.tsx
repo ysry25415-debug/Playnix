@@ -18,6 +18,7 @@ type StoredRequest = {
 } | null;
 
 const MAX_DOC_SIZE_MB = 10;
+const ALLOWED_DOC_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function getFileExt(file: File): string {
   const name = file.name.toLowerCase();
@@ -122,8 +123,8 @@ export default function SellerApplyPage() {
     setError("");
     setSuccess("");
 
-    if (!selected.type.startsWith("image/")) {
-      setError("Please upload image files only.");
+    if (!ALLOWED_DOC_TYPES.has(selected.type)) {
+      setError("Please upload a PNG, JPEG, or WebP image.");
       event.target.value = "";
       return;
     }
@@ -196,6 +197,7 @@ export default function SellerApplyPage() {
       });
 
     if (passportUpload.error) {
+      await supabase.storage.from("kyc-docs").remove([selfiePath]);
       setIsSubmitting(false);
       setError(`Passport upload failed: ${passportUpload.error.message}`);
       return;
@@ -215,13 +217,14 @@ export default function SellerApplyPage() {
     setIsSubmitting(false);
 
     if (insertError) {
+      await supabase.storage.from("kyc-docs").remove([selfiePath, passportPath]);
       setError(`Request submit failed: ${insertError.message}`);
       return;
     }
 
     setLastRequest(insertData);
     setRequestStatus("pending");
-    setSuccess("Submitted successfully. Verification will be completed within 24 hours.");
+    setSuccess("Submitted successfully. Your request is queued for manual review.");
   }
 
   const requestStatusText = useMemo(() => {
@@ -259,7 +262,7 @@ export default function SellerApplyPage() {
                 <input
                   id="seller-selfie"
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp"
                   onChange={(event) => handleFileChange(event, "selfie")}
                   disabled={isLoading || isSubmitting || requestStatus === "pending"}
                 />
@@ -268,7 +271,7 @@ export default function SellerApplyPage() {
                 <input
                   id="seller-passport"
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp"
                   onChange={(event) => handleFileChange(event, "passport")}
                   disabled={isLoading || isSubmitting || requestStatus === "pending"}
                 />

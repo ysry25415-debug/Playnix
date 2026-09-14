@@ -182,6 +182,20 @@ create table if not exists public.user_notifications (
   created_at timestamptz not null default now()
 );
 
+-- Seller identity documents are deliberately separate from public profile data.
+-- The bucket stays private; only server-side admin routes create short-lived review links.
+create table if not exists public.seller_verification_requests (
+  id bigserial primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  selfie_path text not null,
+  passport_path text not null,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  admin_note text,
+  submitted_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  reviewed_by uuid references auth.users(id) on delete set null
+);
+
 create table if not exists public.offer_images (
   id uuid primary key default gen_random_uuid(),
   offer_id uuid not null references public.offers(id) on delete cascade,
@@ -206,6 +220,10 @@ create index if not exists idx_order_trade_rooms_status on public.order_trade_ro
 create index if not exists idx_order_messages_order_id on public.order_messages(order_id, created_at);
 create index if not exists idx_order_reviews_seller_id on public.order_reviews(seller_id, created_at desc);
 create index if not exists idx_user_notifications_recipient_id on public.user_notifications(recipient_id, is_read, created_at);
+create index if not exists idx_seller_verification_requests_status on public.seller_verification_requests(status, submitted_at);
+create unique index if not exists uq_seller_verification_one_pending_per_user
+on public.seller_verification_requests(user_id)
+where status = 'pending';
 create index if not exists idx_offer_images_offer_id on public.offer_images(offer_id, sort_order, created_at);
 create index if not exists idx_offer_images_seller_id on public.offer_images(seller_id);
 create unique index if not exists uq_offer_images_primary_per_offer
@@ -242,6 +260,7 @@ alter table public.order_trade_rooms enable row level security;
 alter table public.order_messages enable row level security;
 alter table public.order_reviews enable row level security;
 alter table public.user_notifications enable row level security;
+alter table public.seller_verification_requests enable row level security;
 
 drop policy if exists "profiles_select_marketplace_identity" on public.profiles;
 drop policy if exists "profiles_select_own_identity" on public.profiles;
@@ -606,6 +625,24 @@ with check (
   )
 );
 
+drop policy if exists "seller_verification_requests_select_own" on public.seller_verification_requests;
+create policy "seller_verification_requests_select_own"
+on public.seller_verification_requests for select
+to authenticated
+using (user_id = auth.uid());
+
+drop policy if exists "seller_verification_requests_insert_own" on public.seller_verification_requests;
+create policy "seller_verification_requests_insert_own"
+on public.seller_verification_requests for insert
+to authenticated
+with check (
+  user_id = auth.uid()
+  and status = 'pending'
+  and admin_note is null
+  and reviewed_at is null
+  and reviewed_by is null
+);
+
 drop policy if exists "offer_images_select_market_or_owner" on public.offer_images;
 create policy "offer_images_select_market_or_owner"
 on public.offer_images for select
@@ -688,6 +725,38 @@ set
   public = excluded.public,
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'kyc-docs',
+  'kyc-docs',
+  false,
+  10485760,
+  array['image/png', 'image/jpeg', 'image/webp']
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "kyc_docs_upload_own_folder" on storage.objects;
+create policy "kyc_docs_upload_own_folder"
+on storage.objects for insert
+to authenticated
+with check (
+  bucket_id = 'kyc-docs'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+drop policy if exists "kyc_docs_delete_own_folder" on storage.objects;
+create policy "kyc_docs_delete_own_folder"
+on storage.objects for delete
+to authenticated
+using (
+  bucket_id = 'kyc-docs'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
 
 drop policy if exists "offer_images_upload_own_folder" on storage.objects;
 create policy "offer_images_upload_own_folder"

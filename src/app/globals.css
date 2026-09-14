@@ -1170,6 +1170,62 @@ button,
   padding: 92px 0 72px;
 }
 
+.support-page__hero {
+  max-width: 800px;
+}
+
+.support-page__steps,
+.support-page__actions {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.support-page__steps {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.support-page__step,
+.support-page__actions article {
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.2);
+  background: rgba(10, 18, 11, 0.72);
+  padding: 20px;
+}
+
+.support-page__step > span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.5);
+  border-radius: 50%;
+  color: var(--playnix-accent-soft);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.support-page__step h2,
+.support-page__actions h2 {
+  margin: 16px 0 8px;
+  font-size: 1.1rem;
+}
+
+.support-page__step p,
+.support-page__actions p {
+  margin: 0;
+  color: var(--playnix-text-secondary);
+  line-height: 1.65;
+}
+
+.support-page__actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.support-page__actions article .primary-button,
+.support-page__actions article .ghost-button {
+  margin-top: 18px;
+}
+
 .auth-page {
   padding: 58px 0 72px;
 }
@@ -2904,7 +2960,9 @@ button,
   .order-room__stats,
   .order-room__participants,
   .seller-module__highlights,
-  .seller-module__stats {
+  .seller-module__stats,
+  .support-page__steps,
+  .support-page__actions {
     grid-template-columns: 1fr;
   }
 
