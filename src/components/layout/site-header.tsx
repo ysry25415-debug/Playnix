@@ -8,6 +8,7 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { siteNavigation } from "@/lib/homepage-data";
 import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
 import { triggerPageLoader } from "@/lib/page-loader-events";
+import { getPublicAccountName } from "@/lib/public-account-name";
 import { supabase } from "@/lib/supabase-client";
 import { PlaynixLogo } from "@/components/shared/playnix-logo";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
@@ -40,11 +41,7 @@ export function SiteHeader() {
 
   const displayName = useMemo(() => {
     if (!user) return "";
-    const metadataName = user.user_metadata?.display_name;
-    if (typeof metadataName === "string" && metadataName.trim()) {
-      return metadataName.trim();
-    }
-    return user.email?.split("@")[0] ?? "Player";
+    return getPublicAccountName(user.user_metadata?.display_name);
   }, [user]);
 
   const avatarUrl = useMemo(() => {

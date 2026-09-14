@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+import { getPublicAccountName } from "@/lib/public-account-name";
+
 type AppRole = "customer" | "seller" | "admin";
 
 function getAdminClient() {
@@ -50,15 +52,12 @@ export async function GET(request: NextRequest) {
 
   const roleValue = profile?.role ?? user.user_metadata?.role;
   const role: AppRole = isAppRole(roleValue) ? roleValue : "customer";
-  const metadataName =
-    typeof user.user_metadata?.display_name === "string" && user.user_metadata.display_name.trim()
-      ? user.user_metadata.display_name.trim()
-      : "";
+  const metadataName = getPublicAccountName(user.user_metadata?.display_name, "");
   const metadataAvatar =
     typeof user.user_metadata?.avatar_url === "string" && user.user_metadata.avatar_url.trim()
       ? user.user_metadata.avatar_url.trim()
       : "";
-  const nextDisplayName = metadataName || profile?.full_name || user.email?.split("@")[0] || "Player";
+  const nextDisplayName = metadataName || getPublicAccountName(profile?.full_name);
   const nextAvatarUrl = metadataAvatar || profile?.avatar_url || null;
 
   if (!profile || profile.full_name !== nextDisplayName || profile.avatar_url !== nextAvatarUrl) {

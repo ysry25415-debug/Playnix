@@ -15,6 +15,7 @@ import {
   type AppRole,
 } from "@/lib/client-role";
 import { triggerPageLoader } from "@/lib/page-loader-events";
+import { getPublicAccountName, isPublicAccountName } from "@/lib/public-account-name";
 import { supabase } from "@/lib/supabase-client";
 
 const MAX_AVATAR_UPLOAD_MB = 5;
@@ -77,6 +78,10 @@ async function buildOptimizedAvatarDataUrl(file: File): Promise<string> {
 }
 
 async function syncPublicProfile(user: User, displayName: string, avatarUrl: string): Promise<boolean> {
+  if (!isPublicAccountName(displayName)) {
+    return false;
+  }
+
   const { data: publicProfile, error: publicProfileError } = await supabase
     .from("profiles")
     .update({
@@ -144,19 +149,14 @@ export default function AccountPage() {
       const metadataName = currentUser.user_metadata?.display_name;
       const metadataAvatar = currentUser.user_metadata?.avatar_url;
 
-      setDisplayName(
-        typeof metadataName === "string" && metadataName.trim()
-          ? metadataName.trim()
-          : (currentUser.email?.split("@")[0] ?? "Player")
-      );
+      const publicName = getPublicAccountName(metadataName);
+      setDisplayName(publicName);
       setAvatarUrl(typeof metadataAvatar === "string" ? metadataAvatar : "");
       setRole(getOptimisticRole(currentUser));
       setIsLoading(false);
       void syncPublicProfile(
         currentUser,
-        typeof metadataName === "string" && metadataName.trim()
-          ? metadataName.trim()
-          : (currentUser.email?.split("@")[0] ?? "Player"),
+        publicName,
         typeof metadataAvatar === "string" ? metadataAvatar : ""
       );
       void loadRole();
@@ -218,8 +218,8 @@ export default function AccountPage() {
     const trimmedName = displayName.trim();
     const trimmedAvatar = avatarUrl.trim();
 
-    if (!trimmedName) {
-      setError("Please enter an account name.");
+    if (!isPublicAccountName(trimmedName)) {
+      setError("Please enter an account name without an email address.");
       return;
     }
 
