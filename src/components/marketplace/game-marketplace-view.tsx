@@ -309,38 +309,24 @@ export function GameMarketplaceView({
         <div className="marketplace-game-hero__copy">
           <span className="eyebrow-chip">{game.eyebrow}</span>
           <h1>{game.title} Marketplace</h1>
-          <p>{game.description}</p>
-          <div className="marketplace-game-hero__chips">
-            {game.categories.map((category) => (
-              <span key={category.slug}>{category.title}</span>
-            ))}
-          </div>
+          <p>Browse {game.categories.map((category) => category.title).join(", ")} offers.</p>
           <div className="hero-actions">
             <Link className="primary-button" href="/marketplace">
-              Shop Now
+              All Games
             </Link>
             <Link className="ghost-button" href="/support">
               Buyer Protection
             </Link>
+            {canCreateOffers ? (
+              <Link
+                className="ghost-button"
+                href={`/sell/offers/new?game=${game.slug}&category=${activeCategory.slug}`}
+              >
+                Add Offer
+              </Link>
+            ) : null}
           </div>
         </div>
-
-        <aside className="marketplace-game-hero__panel" aria-label="Marketplace context">
-          <strong>{activeCategory.title} lane</strong>
-          <p>{activeCategory.description}</p>
-          {canCreateOffers ? (
-            <Link
-              className="ghost-button"
-              href={`/sell/offers/new?game=${game.slug}&category=${activeCategory.slug}`}
-            >
-              Add Offer
-            </Link>
-          ) : (
-            <span className="marketplace-game-hero__hint">
-              Sellers can publish offers directly into this category.
-            </span>
-          )}
-        </aside>
       </div>
 
       <div className="marketplace-tabs">
@@ -351,24 +337,8 @@ export function GameMarketplaceView({
             className={category.isActive ? "marketplace-tab marketplace-tab--active" : "marketplace-tab"}
           >
             <strong>{category.title}</strong>
-            <span>{category.description}</span>
           </Link>
         ))}
-      </div>
-
-      <div className="marketplace-trust-grid">
-        <article className="marketplace-trust-card">
-          <strong>Offer detail browsing</strong>
-          <p>Each listing now opens into its own page so buyers can inspect content before ordering.</p>
-        </article>
-        <article className="marketplace-trust-card">
-          <strong>Seller identity</strong>
-          <p>Every card now points to the seller storefront, rating layer, and public offer lineup.</p>
-        </article>
-        <article className="marketplace-trust-card">
-          <strong>Protected follow-up</strong>
-          <p>Chat handoff, proof steps, and post-order reviews all stay connected to the same seller history.</p>
-        </article>
       </div>
 
       <div className="marketplace-offer-filters" aria-label="Offer filters">

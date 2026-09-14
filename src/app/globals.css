@@ -2240,15 +2240,11 @@ button,
 
 .marketplace-game-page {
   display: grid;
-  gap: 24px;
+  gap: 16px;
 }
 
 .marketplace-game-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 26px;
+  padding: 20px 22px;
   border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.2);
   background:
     linear-gradient(180deg, rgba(var(--playnix-accent-rgb), 0.12), rgba(7, 12, 18, 0.84) 34%),
@@ -2257,66 +2253,21 @@ button,
 
 .marketplace-game-hero__copy {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   min-width: 0;
-  flex: 1;
-}
-
-.marketplace-game-hero__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.marketplace-game-hero__chips span {
-  padding: 8px 12px;
-  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.22);
-  background: rgba(9, 15, 22, 0.74);
-  color: var(--playnix-text-secondary);
-  font-size: 0.8rem;
-}
-
-.marketplace-game-hero__panel {
-  width: min(360px, 100%);
-  display: grid;
-  align-content: start;
-  gap: 12px;
-  padding: 18px;
-  border: 1px solid rgba(var(--playnix-accent-soft-rgb), 0.22);
-  background: rgba(10, 16, 24, 0.86);
-}
-
-.marketplace-game-hero__panel strong {
-  font-size: 1rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.marketplace-game-hero__panel p {
-  margin: 0;
-}
-
-.marketplace-game-hero__panel .ghost-button {
-  width: fit-content;
-}
-
-.marketplace-game-hero__hint {
-  color: var(--playnix-text-secondary);
-  font-size: 0.84rem;
-  line-height: 1.6;
 }
 
 .marketplace-game-hero h1 {
-  margin: 16px 0 12px;
-  font-size: clamp(2.4rem, 6vw, 4.2rem);
-  line-height: 0.96;
+  margin: 0;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1;
 }
 
 .marketplace-game-hero p {
   margin: 0;
   max-width: 62ch;
   color: var(--playnix-text-secondary);
-  line-height: 1.8;
+  line-height: 1.55;
 }
 
 .marketplace-tabs {
@@ -2326,9 +2277,10 @@ button,
 }
 
 .marketplace-tab {
-  padding: 18px;
-  display: grid;
-  gap: 8px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition:
     transform 180ms ease,
     border-color 180ms ease;
@@ -2336,11 +2288,6 @@ button,
 
 .marketplace-tab strong {
   font-size: 1rem;
-}
-
-.marketplace-tab span {
-  color: var(--playnix-text-secondary);
-  line-height: 1.7;
 }
 
 .marketplace-tab:hover,
