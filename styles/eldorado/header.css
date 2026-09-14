@@ -131,21 +131,21 @@
 .eld-header .eld-header__tools-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 18px;
+  gap: 12px;
   align-items: start;
-  min-height: 52px;
-  padding: 8px 0 10px;
+  min-height: 44px;
+  padding: 6px 0;
 }
 
 .eld-header .eld-header__search-column {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .eld-header .eld-header__search {
   display: grid;
-  gap: 8px;
+  gap: 5px;
   flex: 1;
   min-width: 0;
   max-width: 520px;
@@ -160,12 +160,24 @@
 
 .eld-header .eld-header__trust-inline {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  flex-wrap: wrap;
-  max-width: 420px;
-  padding-top: 18px;
+  gap: 6px;
+  flex-wrap: nowrap;
+  padding-top: 16px;
+  white-space: nowrap;
+}
+
+.eld-header .eld-header__search-signal {
+  color: var(--eld-text-secondary);
+  font-size: 0.62rem;
+  letter-spacing: 0.03em;
+}
+
+.eld-header .eld-header__search-signal + .eld-header__search-signal::before {
+  content: "•";
+  margin-right: 6px;
+  color: rgba(149, 247, 121, 0.75);
 }
 
 .eld-header .eld-header__search-history-chips button {
@@ -332,8 +344,8 @@
 }
 
 .eld-header--compact .eld-header__tools-shell {
-  min-height: 44px;
-  padding: 4px 0;
+  min-height: 40px;
+  padding: 3px 0;
 }
 
 .eld-header--compact .eld-header__search label {

@@ -24,8 +24,8 @@ const marketplaceMobileTabs = [
 
 const headerTrustSignals = [
   "Protected checkout",
-  "Held funds until confirmation",
-  "Live delivery room",
+  "Funds held",
+  "Live delivery",
 ];
 
 export function SiteHeader() {
@@ -36,6 +36,7 @@ export function SiteHeader() {
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isSearchCompact, setIsSearchCompact] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
@@ -170,6 +171,8 @@ export function SiteHeader() {
 
   const roleLabel =
     userRole === "admin" ? "Admin" : userRole === "seller" ? "Seller" : userRole === "customer" ? "Customer" : "Loading role...";
+  const showSearchHistory = isSearchFocused && recentSearches.length > 0;
+
   function isActivePath(href: string) {
     if (href === "/") {
       return pathname === "/";
@@ -352,11 +355,17 @@ export function SiteHeader() {
                 aria-label="Search BEN10 platform"
                 value={searchText}
                 onChange={(event) => setSearchText(event.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
               />
             </form>
 
-            {recentSearches.length > 0 ? (
-              <div className="eld-header__search-history" aria-label="Recent searches">
+            {showSearchHistory ? (
+              <div
+                className="eld-header__search-history"
+                aria-label="Recent searches"
+                onMouseDown={(event) => event.preventDefault()}
+              >
                 <div className="eld-header__search-history-head">
                   <span>Recent searches</span>
                   <button type="button" onClick={clearRecentSearches}>
