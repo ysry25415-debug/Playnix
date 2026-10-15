@@ -1,23 +1,6 @@
 import Link from "next/link";
 
-import { marketplaceGames } from "@/lib/marketplace-data";
-
-const heroGameSlugs = [
-  "fortnite",
-  "valorant",
-  "grand-theft-auto-5",
-  "rainbow-six-siege-x",
-  "minecraft",
-  "roblox",
-  "league-of-legends",
-  "rocket-league",
-];
-
 export function HeroSection() {
-  const heroGames = heroGameSlugs
-    .map((slug) => marketplaceGames.find((game) => game.slug === slug))
-    .filter((game): game is (typeof marketplaceGames)[number] => Boolean(game));
-
   return (
     <section className="eld-hero">
       <div className="shell shell--hero">
@@ -28,14 +11,11 @@ export function HeroSection() {
             loading="eager"
             decoding="async"
           />
-          <nav className="eld-hero__game-dock" aria-label="Featured game markets">
-            {heroGames.map((game) => (
-              <Link key={game.slug} href={`/marketplace/${game.slug}`} title={game.title}>
-                <span aria-hidden="true">{game.icon}</span>
-                <small>{game.title}</small>
-              </Link>
-            ))}
-          </nav>
+          <div className="eld-hero__action">
+            <Link className="primary-button" href="/marketplace">
+              Shop Now
+            </Link>
+          </div>
         </div>
       </div>
     </section>

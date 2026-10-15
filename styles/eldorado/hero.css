@@ -1,6 +1,9 @@
 .eld-hero {
-  padding-top: 22px;
-  padding-bottom: 28px;
+  padding: 0;
+}
+
+.eld-hero .shell--hero {
+  width: 100%;
 }
 
 .eld-hero .eld-hero__overlay h1 {
@@ -22,18 +25,12 @@
 .eld-hero .eld-hero__media {
   position: relative;
   width: 100%;
-  aspect-ratio: 21 / 8;
-  min-height: 440px;
-  border: 1px solid rgba(81, 86, 109, 0.52);
-  border-radius: 28px;
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
   isolation: isolate;
-  background:
-    linear-gradient(160deg, rgba(17, 19, 27, 0.98), rgba(7, 8, 13, 0.99));
-  box-shadow:
-    0 30px 90px rgba(0, 0, 0, 0.46),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    inset 0 -24px 48px rgba(0, 0, 0, 0.3);
+  background: #05070b;
+  box-shadow: none;
 }
 
 .eld-hero .eld-hero__media::before,
@@ -46,7 +43,7 @@
 .eld-hero .eld-hero__media::before {
   inset: 0;
   z-index: 1;
-  background: linear-gradient(180deg, transparent 0%, transparent 48%, rgba(5, 7, 11, 0.16) 66%, rgba(5, 7, 11, 0.9) 100%);
+  background: linear-gradient(180deg, transparent 0%, transparent 52%, rgba(5, 7, 11, 0.08) 66%, rgba(5, 7, 11, 0.96) 100%);
 }
 
 .eld-hero .eld-hero__media::after {
@@ -55,66 +52,22 @@
 
 .eld-hero .eld-hero__media img {
   width: 100%;
-  height: 100%;
-  min-height: 0;
-  object-fit: cover;
-  object-position: center 14%;
+  height: auto;
   display: block;
-  transform: scale(1.015);
-  filter: saturate(1.04) contrast(1.02);
+  transform: none;
+  filter: saturate(1.03) contrast(1.01);
 }
 
-.eld-hero .eld-hero__game-dock {
+.eld-hero .eld-hero__action {
   position: absolute;
   z-index: 2;
-  right: 24px;
-  bottom: 18px;
-  left: 24px;
-  display: flex;
-  align-items: end;
+  left: clamp(24px, 12vw, 225px);
+  bottom: clamp(28px, 5vw, 88px);
+}
+
+.eld-hero .eld-hero__action .primary-button {
+  min-width: 142px;
   justify-content: center;
-  gap: clamp(10px, 1.5vw, 20px);
-}
-
-.eld-hero .eld-hero__game-dock a {
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  width: 70px;
-  color: rgba(255, 255, 255, 0.92);
-  text-align: center;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.86);
-  transition: transform 180ms ease, color 180ms ease;
-}
-
-.eld-hero .eld-hero__game-dock a:hover,
-.eld-hero .eld-hero__game-dock a:focus-visible {
-  color: var(--eld-accent, #9aff75);
-  transform: translateY(-4px);
-}
-
-.eld-hero .eld-hero__game-dock span {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  border-radius: 10px;
-  background: linear-gradient(145deg, rgba(159, 255, 117, 0.54), rgba(17, 24, 29, 0.72));
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.32);
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.02em;
-}
-
-.eld-hero .eld-hero__game-dock small {
-  width: 100%;
-  overflow: hidden;
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .eld-hero .eld-hero__overlay {
@@ -204,15 +157,6 @@
 }
 
 @media (max-width: 1080px) {
-  .eld-hero .eld-hero__media {
-    aspect-ratio: 16 / 8;
-    min-height: 390px;
-  }
-
-  .eld-hero .eld-hero__media img {
-    object-position: center 20%;
-  }
-
   .eld-hero .eld-hero__overlay {
     width: min(520px, calc(100% - 40px));
     left: 20px;
@@ -222,26 +166,12 @@
 
 @media (max-width: 640px) {
   .eld-hero {
-    padding-top: 14px;
-    padding-bottom: 20px;
+    padding: 0;
   }
 
-  .eld-hero .eld-hero__media {
-    aspect-ratio: 3 / 4;
-    min-height: 360px;
-  }
-
-  .eld-hero .eld-hero__game-dock {
-    right: 10px;
-    bottom: 12px;
-    left: 10px;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px 4px;
-  }
-
-  .eld-hero .eld-hero__game-dock a {
-    width: auto;
+  .eld-hero .eld-hero__action {
+    left: 22px;
+    bottom: 22px;
   }
 
   .eld-hero .eld-hero__overlay {
@@ -258,18 +188,9 @@
     max-width: none;
   }
 
-  .eld-hero .eld-hero__media img {
-    object-position: center 18%;
-    transform: scale(1.03);
-  }
 }
 
 @media (max-width: 420px) {
-  .eld-hero .eld-hero__media {
-    aspect-ratio: 10 / 13;
-    min-height: 340px;
-  }
-
   .eld-hero .eld-hero__overlay {
     padding: 14px;
     gap: 10px;
