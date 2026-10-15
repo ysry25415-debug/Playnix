@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { getGameThumbnailUrl } from "@/components/marketplace/game-offer-visual";
 import { marketplaceGames } from "@/lib/marketplace-data";
 
 type MarketShortcut = {
@@ -85,7 +86,7 @@ export function PopularMarketsSection() {
                       className="popular-market-link"
                     >
                       <span className="popular-market-link__icon" aria-hidden="true">
-                        {game.icon}
+                        <img src={getGameThumbnailUrl(item.gameSlug)} alt="" />
                       </span>
                       <span>{item.label}</span>
                     </Link>

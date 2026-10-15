@@ -37,6 +37,12 @@ const gameVisuals: Record<string, GameVisual> = {
 
 const fallbackVisual: GameVisual = { domain: "ben10.market", start: "#75d97b", end: "#15341c" };
 
+export function getGameThumbnailUrl(gameSlug: string) {
+  const visual = gameVisuals[gameSlug] ?? fallbackVisual;
+
+  return `https://www.google.com/s2/favicons?domain=${visual.domain}&sz=128`;
+}
+
 export function GameOfferVisual({ gameSlug, className = "" }: GameOfferVisualProps) {
   const game = getMarketplaceGame(gameSlug);
   const visual = gameVisuals[gameSlug] ?? fallbackVisual;
@@ -50,7 +56,7 @@ export function GameOfferVisual({ gameSlug, className = "" }: GameOfferVisualPro
     <div className={`game-offer-visual ${className}`.trim()} style={style}>
       <img
         className="game-offer-visual__icon"
-        src={`https://www.google.com/s2/favicons?domain=${visual.domain}&sz=128`}
+        src={getGameThumbnailUrl(gameSlug)}
         alt={`${gameTitle} icon`}
       />
       <span className="game-offer-visual__title">{gameTitle}</span>
