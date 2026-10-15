@@ -1,6 +1,23 @@
 import Link from "next/link";
 
+import { marketplaceGames } from "@/lib/marketplace-data";
+
+const heroGameSlugs = [
+  "fortnite",
+  "valorant",
+  "grand-theft-auto-5",
+  "rainbow-six-siege-x",
+  "minecraft",
+  "roblox",
+  "league-of-legends",
+  "rocket-league",
+];
+
 export function HeroSection() {
+  const heroGames = heroGameSlugs
+    .map((slug) => marketplaceGames.find((game) => game.slug === slug))
+    .filter((game): game is (typeof marketplaceGames)[number] => Boolean(game));
+
   return (
     <section className="eld-hero">
       <div className="shell shell--hero">
@@ -11,22 +28,14 @@ export function HeroSection() {
             loading="eager"
             decoding="async"
           />
-          <div className="eld-hero__overlay">
-            <span className="eyebrow-chip">BEN10 Trading Hub</span>
-            <h1>Buy and sell gaming offers in one trusted marketplace.</h1>
-            <p>
-              Browse accounts, currencies, and services with fast order flow and clear seller visibility
-              built for smooth game trading.
-            </p>
-            <div className="hero-actions">
-              <Link className="primary-button" href="/marketplace">
-                Shop Now
+          <nav className="eld-hero__game-dock" aria-label="Featured game markets">
+            {heroGames.map((game) => (
+              <Link key={game.slug} href={`/marketplace/${game.slug}`} title={game.title}>
+                <span aria-hidden="true">{game.icon}</span>
+                <small>{game.title}</small>
               </Link>
-              <Link className="ghost-button" href="/sell">
-                Start Selling
-              </Link>
-            </div>
-          </div>
+            ))}
+          </nav>
         </div>
       </div>
     </section>
