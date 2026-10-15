@@ -971,6 +971,12 @@ button,
   gap: 22px;
 }
 
+.popular-markets {
+  position: relative;
+  z-index: 3;
+  margin-top: -210px;
+}
+
 .popular-market-group {
   min-height: 230px;
   padding: 28px;
@@ -2987,6 +2993,10 @@ button,
   .popular-market-group--wide,
   .popular-market-group:not(.popular-market-group--wide) {
     grid-column: auto;
+  }
+
+  .popular-markets {
+    margin-top: -150px;
   }
 
   .module-page h1 {

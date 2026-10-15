@@ -25,6 +25,7 @@
 .eld-hero .eld-hero__media {
   position: relative;
   width: 100%;
+  height: clamp(440px, 38vw, 710px);
   border: 0;
   border-radius: 0;
   overflow: hidden;
@@ -52,7 +53,9 @@
 
 .eld-hero .eld-hero__media img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
   display: block;
   transform: none;
   filter: saturate(1.03) contrast(1.01);
@@ -61,8 +64,10 @@
 .eld-hero .eld-hero__action {
   position: absolute;
   z-index: 2;
-  left: clamp(24px, 12vw, 225px);
-  bottom: clamp(28px, 5vw, 88px);
+  top: 52%;
+  left: clamp(24px, 22.5vw, 420px);
+  bottom: auto;
+  transform: translateY(-50%);
 }
 
 .eld-hero .eld-hero__action .primary-button {
@@ -172,6 +177,15 @@
   .eld-hero .eld-hero__action {
     left: 22px;
     bottom: 22px;
+    transform: none;
+  }
+
+  .eld-hero .eld-hero__media {
+    height: auto;
+  }
+
+  .eld-hero .eld-hero__media img {
+    height: auto;
   }
 
   .eld-hero .eld-hero__overlay {
