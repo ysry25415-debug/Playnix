@@ -17,6 +17,7 @@ import {
   type OrderRow,
   type OrderTradeRoomRow,
 } from "@/lib/marketplace-types";
+import { loadOrderPartyProfiles } from "@/lib/order-party-profiles";
 import { supabase } from "@/lib/supabase-client";
 
 type OrderRoomProps = {
@@ -192,24 +193,15 @@ export function OrderRoom({ orderId }: OrderRoomProps) {
       setMessages(typedMessages);
       setSellerWindowMinutes(String(typedRoom?.delivery_window_minutes ?? 60));
 
-      const profileIds = Array.from(
-        new Set(
-          [typedOrder.buyer_id, typedOrder.seller_id, ...typedMessages.map((item) => item.sender_id)].filter(
-            (value): value is string => Boolean(value)
-          )
-        )
-      );
-
-      if (profileIds.length > 0) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("id,full_name,avatar_url")
-          .in("id", profileIds);
+      if (sessionData.session?.access_token) {
+        const profileData = await loadOrderPartyProfiles(sessionData.session.access_token, [orderId]).catch(
+          () => []
+        );
 
         if (!isMounted) return;
 
         const nextProfiles: Record<string, PartyProfile> = {};
-        (profileData ?? []).forEach((profile) => {
+        profileData.forEach((profile) => {
           nextProfiles[profile.id] = {
             id: profile.id,
             full_name: profile.full_name,

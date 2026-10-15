@@ -10,6 +10,7 @@ import {
   normalizeOrderRow,
 } from "@/lib/marketplace-compat";
 import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
+import { loadOrderPartyProfiles } from "@/lib/order-party-profiles";
 import { supabase } from "@/lib/supabase-client";
 import { type OrderRow, type OrderTradeRoomRow } from "@/lib/marketplace-types";
 
@@ -76,10 +77,6 @@ export function SellerOrdersPanel() {
     setOrders(normalizedOrders);
 
     const orderIds = normalizedOrders.map((item) => item.id).filter(Boolean);
-    const buyerIds = Array.from(
-      new Set(normalizedOrders.map((item) => item.buyer_id).filter((value): value is string => Boolean(value)))
-    );
-
     if (orderIds.length === 0) {
       setRoomsByOrderId({});
       setBuyersById({});
@@ -87,11 +84,11 @@ export function SellerOrdersPanel() {
       return;
     }
 
-    const [roomsResult, buyersResult] = await Promise.all([
+    const [roomsResult, buyerProfiles] = await Promise.all([
       supabase.from("order_trade_rooms").select("*").in("order_id", orderIds),
-      buyerIds.length
-        ? supabase.from("profiles").select("id,full_name,avatar_url").in("id", buyerIds)
-        : Promise.resolve({ data: [], error: null }),
+      sessionData.session?.access_token
+        ? loadOrderPartyProfiles(sessionData.session.access_token, orderIds).catch(() => [])
+        : Promise.resolve([]),
     ]);
 
     const nextRooms: Record<string, OrderTradeRoomRow> = {};
@@ -101,7 +98,7 @@ export function SellerOrdersPanel() {
     setRoomsByOrderId(nextRooms);
 
     const nextBuyers: Record<string, BuyerProfile> = {};
-    (buyersResult.data ?? []).forEach((profile) => {
+    buyerProfiles.forEach((profile) => {
       nextBuyers[profile.id] = {
         id: profile.id,
         full_name: profile.full_name,
