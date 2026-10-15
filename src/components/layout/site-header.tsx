@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type User } from "@supabase/supabase-js";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { siteNavigation } from "@/lib/homepage-data";
 import { fetchRoleForCurrentUser, getOptimisticRole, type AppRole } from "@/lib/client-role";
@@ -36,9 +36,11 @@ export function SiteHeader() {
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isSearchCompact, setIsSearchCompact] = useState(false);
+  const [isHomeSearchVisible, setIsHomeSearchVisible] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const lastScrollY = useRef(0);
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -134,7 +136,20 @@ export function SiteHeader() {
 
   useEffect(() => {
     function handleScroll() {
-      setIsSearchCompact(window.scrollY > 42);
+      const nextScrollY = window.scrollY;
+      setIsSearchCompact(nextScrollY > 42);
+
+      if (pathname !== "/") {
+        setIsHomeSearchVisible(true);
+      } else if (nextScrollY < 18) {
+        setIsHomeSearchVisible(false);
+      } else if (nextScrollY > lastScrollY.current + 4) {
+        setIsHomeSearchVisible(true);
+      } else if (nextScrollY < lastScrollY.current - 4) {
+        setIsHomeSearchVisible(false);
+      }
+
+      lastScrollY.current = nextScrollY;
     }
 
     handleScroll();
@@ -143,7 +158,7 @@ export function SiteHeader() {
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     setSearchText(searchParams?.get("q") ?? "");
@@ -343,7 +358,15 @@ export function SiteHeader() {
         {renderSessionActions()}
       </div>
 
-      <div className={isSearchCompact ? "eld-header__tools eld-header__tools--compact" : "eld-header__tools"}>
+      <div
+        className={[
+          "eld-header__tools",
+          isSearchCompact ? "eld-header__tools--compact" : "",
+          pathname === "/" && !isHomeSearchVisible ? "eld-header__tools--home-hidden" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         <div className="shell eld-header__tools-shell">
           <div className="eld-header__search-column">
             <form className="eld-header__search" onSubmit={handleHeaderSearchSubmit}>

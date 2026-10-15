@@ -123,9 +123,30 @@
 }
 
 .eld-header .eld-header__tools {
+  max-height: 240px;
+  overflow: hidden;
   border-top: 1px solid rgba(67, 66, 82, 0.4);
   border-bottom: 1px solid rgba(67, 66, 82, 0.4);
   background: linear-gradient(180deg, rgba(23, 24, 33, 0.98), rgba(13, 14, 21, 0.98));
+  transition:
+    max-height 280ms ease,
+    opacity 220ms ease,
+    transform 280ms ease,
+    border-color 280ms ease;
+}
+
+.eld-header .eld-header__tools--home-hidden {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.eld-header .eld-header__tools--home-hidden .eld-header__tools-shell {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .eld-header .eld-header__tools-shell {

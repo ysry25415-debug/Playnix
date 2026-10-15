@@ -974,7 +974,7 @@ button,
 .popular-markets {
   position: relative;
   z-index: 3;
-  margin-top: -210px;
+  margin-top: -150px;
 }
 
 .popular-market-group {
@@ -2996,7 +2996,7 @@ button,
   }
 
   .popular-markets {
-    margin-top: -150px;
+    margin-top: -100px;
   }
 
   .module-page h1 {
@@ -3324,6 +3324,10 @@ button,
 
   .shell--hero {
     width: min(100vw - 10px, 100%);
+  }
+
+  .popular-markets {
+    margin-top: 0;
   }
 
   .hero-section,
