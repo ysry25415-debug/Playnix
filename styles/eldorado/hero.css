@@ -64,10 +64,10 @@
 .eld-hero .eld-hero__action {
   position: absolute;
   z-index: 2;
-  top: 52%;
-  left: clamp(24px, 22.5vw, 420px);
+  top: calc(100% - 188px);
+  left: clamp(24px, 11.5vw, 224px);
   bottom: auto;
-  transform: translateY(-50%);
+  transform: none;
 }
 
 .eld-hero .eld-hero__action .primary-button {
@@ -175,6 +175,7 @@
   }
 
   .eld-hero .eld-hero__action {
+    top: auto;
     left: 22px;
     bottom: 22px;
     transform: none;
