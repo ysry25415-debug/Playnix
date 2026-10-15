@@ -13,10 +13,7 @@
 
 .eld-header .eld-header__main {
   display: grid;
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 10px 28px;
+  padding: 10px 0;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 16px;
@@ -409,12 +406,6 @@
 }
 
 @media (max-width: 640px) {
-  .eld-header .eld-header__main {
-    width: min(100vw - 20px, 100%);
-    margin: 0 auto;
-    padding: 10px 0;
-  }
-
   .eld-header .eld-header__nav {
     display: none;
   }
