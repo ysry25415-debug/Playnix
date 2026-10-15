@@ -64,7 +64,7 @@
 .eld-hero .eld-hero__action {
   position: absolute;
   z-index: 2;
-  top: calc(100% - 188px);
+  top: calc(100% - 172px);
   left: clamp(220px, 25.8vw, 488px);
   bottom: auto;
   transform: translateX(-50%);
