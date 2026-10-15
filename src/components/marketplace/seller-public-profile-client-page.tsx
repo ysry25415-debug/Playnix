@@ -8,6 +8,10 @@ import {
   normalizeOfferRow,
 } from "@/lib/marketplace-compat";
 import { type OfferWithImagesRow, type OrderReviewRow } from "@/lib/marketplace-types";
+import {
+  loadMarketplaceSellerProfiles,
+  type MarketplaceSellerProfile,
+} from "@/lib/marketplace-seller-profiles";
 import { type SellerPublicProfileData } from "@/lib/public-marketplace";
 import { getSellerRatingSummary, normalizeOrderReviewRow } from "@/lib/seller-ratings";
 import { supabase } from "@/lib/supabase-client";
@@ -16,13 +20,6 @@ import { SellerPublicProfileView } from "./seller-public-profile-view";
 
 type SellerPublicProfileClientPageProps = {
   sellerId: string;
-};
-
-type SellerProfile = {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  role: string | null;
 };
 
 export function SellerPublicProfileClientPage({ sellerId }: SellerPublicProfileClientPageProps) {
@@ -35,12 +32,8 @@ export function SellerPublicProfileClientPage({ sellerId }: SellerPublicProfileC
     async function loadStorefront() {
       setError("");
 
-      const [profileResult, offersResult, reviewsResult] = await Promise.all([
-        supabase
-          .from("marketplace_seller_profiles")
-          .select("id,full_name,avatar_url,role")
-          .eq("id", sellerId)
-          .maybeSingle(),
+      const [profiles, offersResult, reviewsResult] = await Promise.all([
+        loadMarketplaceSellerProfiles([sellerId]).catch(() => []),
         supabase
           .from("offers")
           .select("*")
@@ -52,7 +45,7 @@ export function SellerPublicProfileClientPage({ sellerId }: SellerPublicProfileC
 
       if (!isMounted) return;
 
-      if (profileResult.error || offersResult.error || reviewsResult.error) {
+      if (offersResult.error || reviewsResult.error) {
         setError("This seller storefront could not be loaded. Please try again.");
         return;
       }
@@ -63,7 +56,7 @@ export function SellerPublicProfileClientPage({ sellerId }: SellerPublicProfileC
       const reviews = (reviewsResult.data ?? [])
         .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
         .map((item) => normalizeOrderReviewRow(item));
-      const profile = profileResult.data as SellerProfile | null;
+      const profile = (profiles[0] as MarketplaceSellerProfile | undefined) ?? null;
 
       if (!profile && offers.length === 0) {
         setError("This seller storefront is no longer available.");

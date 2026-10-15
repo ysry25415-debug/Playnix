@@ -17,6 +17,10 @@ import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import { getPrimaryOfferImage } from "@/lib/offer-images";
 import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { type MarketplaceGame } from "@/lib/marketplace-data";
+import {
+  loadMarketplaceSellerProfiles,
+  type MarketplaceSellerProfile,
+} from "@/lib/marketplace-seller-profiles";
 import { type OfferWithImagesRow } from "@/lib/marketplace-types";
 import {
   getSellerRatingSummary,
@@ -26,13 +30,6 @@ import {
 import { supabase } from "@/lib/supabase-client";
 
 const RECENT_LANES_KEY = "playnix-recent-lanes";
-
-type SellerMarketplaceProfile = {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  role: string | null;
-};
 
 type GameMarketplaceViewProps = {
   game: MarketplaceGame;
@@ -47,7 +44,7 @@ export function GameMarketplaceView({
 }: GameMarketplaceViewProps) {
   const router = useRouter();
   const [offers, setOffers] = useState<OfferWithImagesRow[]>([]);
-  const [sellerProfiles, setSellerProfiles] = useState<Record<string, SellerMarketplaceProfile>>({});
+  const [sellerProfiles, setSellerProfiles] = useState<Record<string, MarketplaceSellerProfile>>({});
   const [sellerRatings, setSellerRatings] = useState<Record<string, SellerRatingSummary>>({});
   const [viewerRole, setViewerRole] = useState<AppRole | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
@@ -133,8 +130,8 @@ export function GameMarketplaceView({
           .order("sort_order", { ascending: true })
           .order("created_at", { ascending: true }),
         sellerIds.length
-          ? supabase.from("marketplace_seller_profiles").select("id,full_name,avatar_url,role").in("id", sellerIds)
-          : Promise.resolve({ data: [], error: null }),
+          ? loadMarketplaceSellerProfiles(sellerIds).catch(() => [])
+          : Promise.resolve([]),
         sellerIds.length
           ? supabase.from("order_reviews").select("*").in("seller_id", sellerIds).order("created_at", { ascending: false })
           : Promise.resolve({ data: [], error: null }),
@@ -142,8 +139,8 @@ export function GameMarketplaceView({
 
       if (!isMounted) return;
 
-      const nextProfiles: Record<string, SellerMarketplaceProfile> = {};
-      (profilesResult.data ?? []).forEach((profile) => {
+      const nextProfiles: Record<string, MarketplaceSellerProfile> = {};
+      profilesResult.forEach((profile) => {
         nextProfiles[profile.id] = {
           id: profile.id,
           full_name: profile.full_name,
