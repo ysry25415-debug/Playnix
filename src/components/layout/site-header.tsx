@@ -35,7 +35,6 @@ export function SiteHeader() {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<AppRole | null>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [isSearchCompact, setIsSearchCompact] = useState(false);
   const [isHomeSearchVisible, setIsHomeSearchVisible] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -137,8 +136,6 @@ export function SiteHeader() {
   useEffect(() => {
     function handleScroll() {
       const nextScrollY = window.scrollY;
-      setIsSearchCompact(nextScrollY > 42);
-
       if (pathname !== "/") {
         setIsHomeSearchVisible(true);
       } else if (nextScrollY < 18) {
@@ -351,7 +348,7 @@ export function SiteHeader() {
   }
 
   return (
-    <header className={isSearchCompact ? "eld-header eld-header--compact" : "eld-header"}>
+    <header className="eld-header">
       <div className="shell eld-header__main">
         {renderBrand()}
         {renderPrimaryNavigation()}
@@ -361,7 +358,6 @@ export function SiteHeader() {
       <div
         className={[
           "eld-header__tools",
-          isSearchCompact ? "eld-header__tools--compact" : "",
           pathname === "/" && !isHomeSearchVisible ? "eld-header__tools--home-hidden" : "",
         ]
           .filter(Boolean)
