@@ -277,7 +277,7 @@ using (id = auth.uid())
 with check (id = auth.uid());
 
 create or replace view public.marketplace_seller_profiles
-with (security_barrier = true)
+with (security_barrier = true, security_invoker = true)
 as
 select id, full_name, avatar_url, role
 from public.profiles
@@ -792,3 +792,9 @@ using (
   bucket_id = 'offer-images'
   and (storage.foldername(name))[1] = auth.uid()::text
 );
+
+-- Views default to security definer in Postgres, which can bypass the RLS
+-- policies on their source tables. This marketplace view is exposed through
+-- the Data API, so always evaluate it with the requesting user's permissions.
+alter view if exists public.marketplace_seller_profiles
+set (security_invoker = true);
