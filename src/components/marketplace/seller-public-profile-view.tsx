@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { RatingStars } from "@/components/shared/rating-stars";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
+import { GameOfferVisual } from "@/components/marketplace/game-offer-visual";
 import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import { getPrimaryOfferImage } from "@/lib/offer-images";
 import { type SellerPublicProfileData } from "@/lib/public-marketplace";
@@ -109,9 +110,7 @@ export function SellerPublicProfileView({ data }: SellerPublicProfileViewProps) 
                           alt={offer.title}
                         />
                       ) : (
-                        <div className="marketplace-offer-card__media marketplace-offer-card__media--placeholder">
-                          No image
-                        </div>
+                        <GameOfferVisual className="marketplace-offer-card__media" gameSlug={offer.game_slug} />
                       )}
                     </Link>
 

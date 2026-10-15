@@ -2464,6 +2464,49 @@ button,
   font-size: 0.82rem;
 }
 
+.game-offer-visual {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 76% 22%, color-mix(in srgb, var(--game-offer-visual-start) 72%, transparent), transparent 34%),
+    linear-gradient(135deg, var(--game-offer-visual-start), var(--game-offer-visual-end));
+}
+
+.game-offer-visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.32;
+  background:
+    linear-gradient(120deg, transparent 0 42%, rgba(255, 255, 255, 0.26) 42.2% 43%, transparent 43.2% 100%),
+    linear-gradient(28deg, transparent 0 60%, rgba(0, 0, 0, 0.34) 60.2% 61%, transparent 61.2% 100%);
+}
+
+.game-offer-visual__icon {
+  width: clamp(48px, 16%, 76px);
+  height: clamp(48px, 16%, 76px);
+  border-radius: 20%;
+  object-fit: cover;
+  background: rgba(8, 12, 18, 0.78);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
+}
+
+.game-offer-visual__title {
+  padding: 6px 12px;
+  color: #fff;
+  font-size: clamp(0.78rem, 1.5vw, 1rem);
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.78);
+}
+
 .marketplace-offer-card__head {
   display: flex;
   align-items: center;

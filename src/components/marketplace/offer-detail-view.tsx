@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { RatingStars } from "@/components/shared/rating-stars";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
+import { GameOfferVisual } from "@/components/marketplace/game-offer-visual";
 import { fetchRoleForCurrentUser, type AppRole } from "@/lib/client-role";
 import { getOfferDeliveryModeLabel } from "@/lib/offer-delivery";
 import { getPrimaryOfferImage } from "@/lib/offer-images";
@@ -98,7 +99,7 @@ export function OfferDetailView({ data }: OfferDetailViewProps) {
               {heroImage ? (
                 <img src={heroImage.public_url} alt={data.offer.title} />
               ) : (
-                <div className="offer-detail-hero__placeholder">Offer preview unavailable</div>
+                <GameOfferVisual className="offer-detail-hero__placeholder" gameSlug={data.offer.game_slug} />
               )}
 
               {gallery.length > 1 ? (
@@ -269,9 +270,7 @@ export function OfferDetailView({ data }: OfferDetailViewProps) {
                         {primaryImage ? (
                           <img className="marketplace-offer-card__media" src={primaryImage.public_url} alt={offer.title} />
                         ) : (
-                          <div className="marketplace-offer-card__media marketplace-offer-card__media--placeholder">
-                            No image
-                          </div>
+                          <GameOfferVisual className="marketplace-offer-card__media" gameSlug={offer.game_slug} />
                         )}
                       </Link>
                       <div className="marketplace-offer-card__head">

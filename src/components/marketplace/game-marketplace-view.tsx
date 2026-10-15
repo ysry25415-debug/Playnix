@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { RatingStars } from "@/components/shared/rating-stars";
 import { SellerVerifiedBadge } from "@/components/shared/seller-verified-badge";
+import { GameOfferVisual } from "@/components/marketplace/game-offer-visual";
 import {
   attachImagesToOffers,
   getSchemaCompatibilityMessage,
@@ -419,9 +420,7 @@ export function GameMarketplaceView({
                       alt={offer.title}
                     />
                   ) : (
-                    <div className="marketplace-offer-card__media marketplace-offer-card__media--placeholder">
-                      No image
-                    </div>
+                    <GameOfferVisual className="marketplace-offer-card__media" gameSlug={offer.game_slug} />
                   )}
                 </Link>
 
