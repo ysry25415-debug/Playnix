@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BEN10 Seller Motion Advertisement</title>
+    <style>
+      html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #05090a; }
+      canvas { display: block; width: 100vw; height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <canvas id="ad" width="1920" height="1080"></canvas>
+    <script>
+      (() => {
+        const canvas = document.getElementById("ad");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width;
+        const H = canvas.height;
+        const DURATION = 24;
+        const TAU = Math.PI * 2;
+        const green = "#96ff54";
+        const lime = "#c9ffa3";
+        const black = "#05090a";
+        const soft = "#dbe9df";
+        const muted = "#9aa5a1";
+        const particles = Array.from({ length: 76 }, (_, i) => ({
+          x: (i * 229) % W,
+          y: (i * 151) % H,
+          r: 1 + (i % 4) * 0.65,
+          speed: 8 + (i % 7) * 2.5,
+          phase: i * 0.71,
+        }));
+        const gameCards = [
+          ["FORTNITE", "ACCOUNT", "F", "#ff9c2a"],
+          ["VALORANT", "ACCOUNT", "V", "#ff5365"],
+          ["ROBLOX", "ACCOUNT", "R", "#ffcc4f"],
+          ["MINECRAFT", "ACCOUNT", "M", "#6ccb44"],
+        ];
+
+        const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+        const ease = (value) => {
+          const n = clamp(value);
+          return n < 0.5 ? 4 * n * n * n : 1 - Math.pow(-2 * n + 2, 3) / 2;
+        };
+        const phase = (t, start, end) => ease((t - start) / (end - start));
+        const fade = (t, start, end) => clamp(Math.min((t - start) / 0.45, (end - t) / 0.45, 1));
+        const alpha = (color, a) => color.startsWith("#")
+          ? `rgba(${parseInt(color.slice(1, 3), 16)}, ${parseInt(color.slice(3, 5), 16)}, ${parseInt(color.slice(5, 7), 16)}, ${a})`
+          : color;
+
+        function roundedRect(x, y, w, h, r) {
+          ctx.beginPath();
+          ctx.roundRect(x, y, w, h, r);
+        }
+
+        function glow(x, y, radius, color, opacity) {
+          const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+          gradient.addColorStop(0, alpha(color, opacity));
+          gradient.addColorStop(0.48, alpha(color, opacity * 0.22));
+          gradient.addColorStop(1, alpha(color, 0));
+          ctx.fillStyle = gradient;
+          ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+        }
+
+        function text(label, x, y, size, color = "#fff", align = "center", weight = 800, opacity = 1) {
+          ctx.save();
+          ctx.globalAlpha = opacity;
+          ctx.fillStyle = color;
+          ctx.font = `${weight} ${size}px Arial, Helvetica, sans-serif`;
+          ctx.textAlign = align;
+          ctx.textBaseline = "middle";
+          ctx.fillText(label, x, y);
+          ctx.restore();
+        }
+
+        function letterSpaced(label, x, y, size, color, spacing, opacity = 1) {
+          ctx.save();
+          ctx.globalAlpha = opacity;
+          ctx.fillStyle = color;
+          ctx.font = `800 ${size}px Arial, Helvetica, sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          const widths = [...label].map((c) => ctx.measureText(c).width);
+          const total = widths.reduce((sum, width) => sum + width, 0) + spacing * (label.length - 1);
+          let cursor = x - total / 2;
+          [...label].forEach((char, index) => {
+            ctx.fillText(char, cursor + widths[index] / 2, y);
+            cursor += widths[index] + spacing;
+          });
+          ctx.restore();
+        }
+
+        function line(x1, y1, x2, y2, color, width, opacity = 1) {
+          ctx.save();
+          ctx.globalAlpha = opacity;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = width;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        function dotGrid(t) {
+          ctx.save();
+          for (let x = 72; x < W; x += 64) {
+            for (let y = 80; y < H; y += 64) {
+              const pulse = 0.12 + 0.07 * Math.sin(t * 1.8 + x * 0.013 + y * 0.008);
+              ctx.fillStyle = alpha(green, pulse);
+              ctx.fillRect(x, y, 2, 2);
+            }
+          }
+          ctx.restore();
+        }
+
+        function background(t) {
+          const base = ctx.createLinearGradient(0, 0, W, H);
+          base.addColorStop(0, "#060c0d");
+          base.addColorStop(0.5, "#07100c");
+          base.addColorStop(1, "#040708");
+          ctx.fillStyle = base;
+          ctx.fillRect(0, 0, W, H);
+          glow(W * 0.27 + Math.sin(t * 0.2) * 120, H * 0.22, 580, green, 0.14);
+          glow(W * 0.78, H * 0.74 + Math.cos(t * 0.25) * 70, 620, "#2bd36a", 0.09);
+          dotGrid(t);
+          particles.forEach((p) => {
+            const y = (p.y + t * p.speed) % H;
+            ctx.fillStyle = alpha(green, 0.1 + 0.18 * (0.5 + 0.5 * Math.sin(t + p.phase)));
+            ctx.fillRect(p.x, y, p.r, p.r);
+          });
+          const vignette = ctx.createRadialGradient(W / 2, H / 2, H * 0.1, W / 2, H / 2, H * 0.9);
+          vignette.addColorStop(0, "rgba(0,0,0,0)");
+          vignette.addColorStop(1, "rgba(0,0,0,0.7)");
+          ctx.fillStyle = vignette;
+          ctx.fillRect(0, 0, W, H);
+        }
+
+        function ben10Mark(x, y, scale = 1, opacity = 1) {
+          ctx.save();
+          ctx.globalAlpha = opacity;
+          ctx.translate(x, y);
+          ctx.scale(scale, scale);
+          glow(0, 0, 92, green, 0.35);
+          ctx.fillStyle = "#0d1811";
+          ctx.strokeStyle = alpha(lime, 0.85);
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(0, 0, 44, 0, TAU);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = green;
+          ctx.beginPath();
+          ctx.moveTo(-16, -26); ctx.lineTo(16, -26); ctx.lineTo(9, 0); ctx.lineTo(16, 26); ctx.lineTo(-16, 26); ctx.lineTo(-9, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+
+        function chip(label, x, y, opacity = 1) {
+          ctx.save();
+          ctx.globalAlpha = opacity;
+          roundedRect(x - 98, y - 25, 196, 50, 25);
+          ctx.fillStyle = alpha("#142219", 0.94);
+          ctx.fill();
+          ctx.strokeStyle = alpha(green, 0.38);
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = green;
+          ctx.beginPath(); ctx.arc(x - 65, y, 5, 0, TAU); ctx.fill();
+          text(label, x + 15, y + 1, 17, soft, "center", 800);
+          ctx.restore();
+        }
+
+        function offerCard(x, y, w, h, index, opacity = 1, scale = 1) {
+          const [title, category, icon, accent] = gameCards[index % gameCards.length];
+          ctx.save();
+          ctx.globalAlpha = opacity;
+          ctx.translate(x, y);
+          ctx.scale(scale, scale);
+          glow(w * 0.5, h * 0.5, w * 0.85, accent, 0.12);
+          roundedRect(0, 0, w, h, 25);
+          ctx.fillStyle = "rgba(17, 24, 25, 0.94)";
+          ctx.fill();
+          ctx.strokeStyle = alpha("#d4ffe5", 0.18);
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          const top = ctx.createLinearGradient(0, 0, w, h * 0.55);
+          top.addColorStop(0, alpha(accent, 0.95));
+          top.addColorStop(1, "rgba(18, 33, 26, 0.25)");
+          roundedRect(18, 18, w - 36, h * 0.43, 17);
+          ctx.fillStyle = top;
+          ctx.fill();
+          roundedRect(36, 37, 72, 72, 17);
+          ctx.fillStyle = "rgba(6, 9, 10, 0.78)";
+          ctx.fill();
+          text(icon, 72, 75, 42, "#fff", "center", 900);
+          text(title, 34, h * 0.61, 22, "#fff", "left", 800);
+          letterSpaced(category, w * 0.5, h * 0.73, 12, muted, 2, 1);
+          roundedRect(34, h - 44, w - 68, 20, 10);
+          ctx.fillStyle = alpha(green, 0.32);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        function accountScene(t) {
+          const a = fade(t, 0, 3.3);
+          const p = phase(t, 0, 3.1);
+          const cardX = 1120 + (1 - p) * 260;
+          ctx.save();
+          ctx.globalAlpha = a;
+          text("HIGH RANK.", 180, 285, 30, green, "left", 800);
+          text("RARE SKINS.", 180, 335, 30, green, "left", 800);
+          text("REAL PROGRESS.", 180, 385, 30, green, "left", 800);
+          text("YOUR GAME ACCOUNT", 180, 515, 76, "#fff", "left", 900);
+          text("DESERVES A BETTER MARKET.", 180, 596, 43, soft, "left", 800);
+          line(180, 654, 660, 654, green, 3, 0.7);
+          offerCard(cardX, 250 + Math.sin(t * 1.5) * 12, 465, 420, 1, 1, 1.06);
+          chip("PREMIUM ACCOUNT", cardX + 236, 720);
+          ctx.restore();
+        }
+
+        function listingScene(t) {
+          const a = fade(t, 3, 7.2);
+          const p = phase(t, 3.15, 6.6);
+          ctx.save();
+          ctx.globalAlpha = a;
+          text("DON'T JUST POST IT.", W / 2, 160, 54, soft, "center", 800);
+          text("MAKE IT A PROFESSIONAL LISTING.", W / 2, 235, 62, "#fff", "center", 900);
+          const x = 180 + p * 110;
+          offerCard(x, 360, 400, 420, 0, 1, 1 + p * 0.07);
+          const formX = 790 - (1 - p) * 100;
+          roundedRect(formX, 330, 850, 470, 32);
+          ctx.fillStyle = "rgba(13, 22, 18, 0.92)";
+          ctx.fill();
+          ctx.strokeStyle = alpha(green, 0.35); ctx.lineWidth = 2; ctx.stroke();
+          text("PUBLISH YOUR OFFER", formX + 50, 395, 25, "#fff", "left", 800);
+          [0, 1, 2].forEach((i) => {
+            roundedRect(formX + 50, 450 + i * 78, 750, 50, 13);
+            ctx.fillStyle = "rgba(4, 10, 8, 0.88)"; ctx.fill();
+            ctx.strokeStyle = alpha("#d5ffe4", 0.16); ctx.stroke();
+            text(["Account title", "Rank, skins, and progression", "Set your price"][i], formX + 75, 475 + i * 78, 18, muted, "left", 600);
+          });
+          roundedRect(formX + 550, 704, 250, 54, 27);
+          ctx.fillStyle = green; ctx.fill();
+          text("PUBLISH OFFER", formX + 675, 731, 17, "#061006", "center", 900);
+          ctx.restore();
+        }
+
+        function marketScene(t) {
+          const a = fade(t, 7, 11.3);
+          const p = phase(t, 7.1, 10.8);
+          ctx.save(); ctx.globalAlpha = a;
+          text("PUT YOUR ACCOUNT", W / 2, 122, 42, soft, "center", 800);
+          text("IN FRONT OF BUYERS.", W / 2, 188, 66, "#fff", "center", 900);
+          const groups = [
+            ["POPULAR ACCOUNTS", 145, 285, 970, 315],
+            ["POPULAR CURRENCIES", 1160, 285, 615, 315],
+            ["POPULAR BOOSTING SERVICES", 145, 635, 970, 230],
+            ["POPULAR ITEMS", 1160, 635, 615, 230],
+          ];
+          groups.forEach(([label, x, y, w, h], i) => {
+            const offset = (1 - p) * (80 + i * 28);
+            roundedRect(x + offset, y + (i % 2 ? -offset * 0.25 : offset * 0.25), w, h, 25);
+            ctx.fillStyle = "rgba(19, 23, 32, 0.94)"; ctx.fill();
+            ctx.strokeStyle = alpha(green, 0.2); ctx.lineWidth = 2; ctx.stroke();
+            text(label, x + 35 + offset, y + 52 + (i % 2 ? -offset * 0.25 : offset * 0.25), 23, "#fff", "left", 800);
+            for (let row = 0; row < (i < 2 ? 3 : 2); row++) {
+              const ry = y + 102 + row * 58 + (i % 2 ? -offset * 0.25 : offset * 0.25);
+              ctx.fillStyle = ["#ff9c2a", "#ff5365", "#6ccb44"][row];
+              roundedRect(x + 35 + offset, ry - 18, 36, 36, 9); ctx.fill();
+              text(["Fortnite account", "Valorant account", "Minecraft account"][row], x + 88 + offset, ry, 19, soft, "left", 700);
+              line(x + 310 + offset, ry, x + w - 35 + offset, ry, "rgba(255,255,255,0.07)", 2);
+            }
+          });
+          ctx.restore();
+        }
+
+        function protectionScene(t) {
+          const a = fade(t, 11, 15.5);
+          const p = phase(t, 11.2, 14.6);
+          ctx.save(); ctx.globalAlpha = a;
+          text("SELL WITH", W / 2, 200, 48, soft, "center", 800);
+          text("MORE CONFIDENCE.", W / 2, 270, 70, "#fff", "center", 900);
+          const items = [["✓", "PROTECTED", "CHECKOUT"], ["$", "FUNDS", "HELD"], ["↗", "LIVE", "DELIVERY"]];
+          items.forEach((item, i) => {
+            const targetX = 420 + i * 540;
+            const x = targetX + (1 - p) * (i === 0 ? -150 : i === 1 ? 0 : 150);
+            const y = 540 + Math.sin(t * 1.9 + i) * 8;
+            glow(x, y, 220, green, 0.12);
+            ctx.fillStyle = "rgba(13, 26, 18, 0.94)";
+            roundedRect(x - 180, y - 118, 360, 236, 30); ctx.fill();
+            ctx.strokeStyle = alpha(green, 0.45); ctx.lineWidth = 2; ctx.stroke();
+            ctx.fillStyle = green; ctx.beginPath(); ctx.arc(x, y - 38, 38, 0, TAU); ctx.fill();
+            text(item[0], x, y - 37, 37, "#071108", "center", 900);
+            text(item[1], x, y + 35, 24, "#fff", "center", 900);
+            text(item[2], x, y + 68, 20, soft, "center", 800);
+          });
+          ctx.restore();
+        }
+
+        function reputationScene(t) {
+          const a = fade(t, 15, 19.1);
+          const p = phase(t, 15.1, 18.4);
+          ctx.save(); ctx.globalAlpha = a;
+          text("BUILD A SELLER NAME", W / 2, 150, 50, soft, "center", 800);
+          text("BUYERS TRUST.", W / 2, 220, 70, "#fff", "center", 900);
+          roundedRect(560, 360 - (1 - p) * 45, 800, 370, 36);
+          ctx.fillStyle = "rgba(13, 24, 20, 0.96)"; ctx.fill();
+          ctx.strokeStyle = alpha(green, 0.45); ctx.lineWidth = 2; ctx.stroke();
+          ctx.fillStyle = "#102016"; ctx.beginPath(); ctx.arc(720, 515, 90, 0, TAU); ctx.fill();
+          ctx.strokeStyle = green; ctx.lineWidth = 3; ctx.stroke();
+          ben10Mark(720, 515, 1.1);
+          text("YOUR SELLER STOREFRONT", 865, 455, 23, muted, "left", 800);
+          text("VERIFIED SELLER", 865, 500, 37, "#fff", "left", 900);
+          roundedRect(1115, 475, 150, 48, 24); ctx.fillStyle = alpha(green, 0.2); ctx.fill();
+          text("VERIFIED ✓", 1190, 499, 16, green, "center", 900);
+          text("★★★★★", 865, 565, 46, "#ffd45a", "left", 900);
+          text("Earn trust with every completed delivery.", 865, 625, 20, soft, "left", 600);
+          ctx.restore();
+        }
+
+        function finaleScene(t) {
+          const a = fade(t, 19, 24);
+          const p = phase(t, 19.1, 21.6);
+          ctx.save(); ctx.globalAlpha = a;
+          glow(W / 2, H / 2, 520 + 80 * Math.sin(t * 2), green, 0.22);
+          const feeA = clamp((t - 20.5) / 0.6);
+          text("ALL OF THAT.", W / 2, 285, 44, soft, "center", 800, p);
+          text("JUST", W / 2 - 160, 432, 44, soft, "right", 800, feeA);
+          text("10%", W / 2 + 10, 432, 152, green, "center", 900, feeA);
+          text("SELLER FEE.", W / 2 + 200, 432, 44, soft, "left", 800, feeA);
+          line(W / 2 - 395, 530, W / 2 + 395, 530, green, 3, feeA * 0.8);
+          ben10Mark(W / 2 - 175, 695, 1.23, p);
+          letterSpaced("BEN10", W / 2 + 70, 670, 78, "#fff", 8, p);
+          text("OMNITRIX MARKETPLACE", W / 2 + 70, 735, 20, lime, "center", 900, p);
+          roundedRect(W / 2 - 180, 825, 360, 72, 36); ctx.fillStyle = green; ctx.globalAlpha = a * p; ctx.fill();
+          text("START SELLING TODAY", W / 2, 862, 22, "#061006", "center", 900, a * p);
+          ctx.restore();
+        }
+
+        function frame(t) {
+          background(t);
+          if (t < 3.4) accountScene(t);
+          if (t > 2.9 && t < 7.3) listingScene(t);
+          if (t > 6.9 && t < 11.4) marketScene(t);
+          if (t > 10.9 && t < 15.6) protectionScene(t);
+          if (t > 14.9 && t < 19.2) reputationScene(t);
+          if (t > 18.9) finaleScene(t);
+        }
+
+        function sound(stream, duration) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          const audio = new AudioCtx();
+          const destination = audio.createMediaStreamDestination();
+          const master = audio.createGain(); master.gain.value = 0.075; master.connect(destination);
+          const start = audio.currentTime + 0.08;
+          const notes = [49, 54, 56, 61, 49, 54, 56, 63];
+          for (let i = 0; i < duration * 2; i++) {
+            const osc = audio.createOscillator(); const gain = audio.createGain();
+            osc.type = i % 4 === 0 ? "sawtooth" : "triangle";
+            osc.frequency.value = notes[i % notes.length];
+            gain.gain.setValueAtTime(0.0001, start + i * 0.5);
+            gain.gain.exponentialRampToValueAtTime(i % 4 === 0 ? 0.38 : 0.15, start + i * 0.5 + 0.035);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + i * 0.5 + 0.44);
+            osc.connect(gain); gain.connect(master); osc.start(start + i * 0.5); osc.stop(start + i * 0.5 + 0.48);
+          }
+          [3, 7, 11, 15, 19, 22].forEach((time) => {
+            const osc = audio.createOscillator(); const gain = audio.createGain();
+            osc.type = "sine"; osc.frequency.setValueAtTime(160, start + time); osc.frequency.exponentialRampToValueAtTime(48, start + time + 0.35);
+            gain.gain.setValueAtTime(0.0001, start + time); gain.gain.exponentialRampToValueAtTime(0.6, start + time + 0.01); gain.gain.exponentialRampToValueAtTime(0.0001, start + time + 0.38);
+            osc.connect(gain); gain.connect(master); osc.start(start + time); osc.stop(start + time + 0.4);
+          });
+          stream.addTrack(destination.stream.getAudioTracks()[0]);
+          return audio.resume();
+        }
+
+        async function record() {
+          const stream = canvas.captureStream(30);
+          await sound(stream, DURATION);
+          const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus") ? "video/webm;codecs=vp9,opus" : "video/webm";
+          const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 9_000_000, audioBitsPerSecond: 160_000 });
+          const chunks = [];
+          recorder.ondataavailable = (event) => event.data.size && chunks.push(event.data);
+          recorder.onstop = async () => {
+            const blob = new Blob(chunks, { type: mime });
+            const bytes = new Uint8Array(await blob.arrayBuffer());
+            let binary = "";
+            const step = 0x8000;
+            for (let i = 0; i < bytes.length; i += step) binary += String.fromCharCode(...bytes.subarray(i, i + step));
+            window.__ben10AdBase64 = btoa(binary);
+            window.__ben10AdStatus = "complete";
+          };
+          window.__ben10AdStatus = "recording";
+          const start = performance.now();
+          recorder.start(1000);
+          function render(now) {
+            const elapsed = Math.min((now - start) / 1000, DURATION);
+            frame(elapsed);
+            if (elapsed < DURATION) requestAnimationFrame(render);
+            else recorder.stop();
+          }
+          requestAnimationFrame(render);
+        }
+
+        frame(0);
+        window.__ben10AdStatus = "ready";
+        if (new URLSearchParams(location.search).get("render") === "1") record();
+      })();
+    </script>
+  </body>
+</html>
